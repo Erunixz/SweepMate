@@ -324,20 +324,25 @@ function SweepTimeRow({
   const nextDay = isValidTime(row.time) && isValidTime(shiftStart) && isNextDay(shiftStart, row.time)
   return (
     <li className="flex items-center gap-2">
-      <label htmlFor={id} className="w-20 text-sm font-semibold">
-        Sweep {index + 1}
-      </label>
+      {/* "next day" sits under the label so the time field keeps its width on narrow phones. */}
+      <div className="w-[4.5rem] shrink-0 leading-tight">
+        <label htmlFor={id} className="block text-sm font-semibold">
+          Sweep {index + 1}
+        </label>
+        {nextDay && (
+          <span id={`${id}-next`} className="text-xs text-muted">
+            next day
+          </span>
+        )}
+      </div>
       <input
         id={id}
         type="time"
         value={row.time}
         onChange={(e) => onChange(e.target.value)}
         aria-describedby={nextDay ? `${id}-next` : undefined}
-        className="flex-1 min-h-11 rounded-md border border-line bg-surface-2/60 px-3"
+        className="flex-1 w-full min-w-0 min-h-11 rounded-md border border-line bg-surface-2/60 px-3 text-base"
       />
-      <span id={`${id}-next`} className="w-16 text-xs text-muted">
-        {nextDay ? 'next day' : ''}
-      </span>
       <Button variant="ghost" size="sm" onClick={onRemove} aria-label={`Remove sweep ${index + 1} (${formatTime12(row.time)})`}>
         ✕
       </Button>

@@ -62,6 +62,8 @@ Copy or download the report
 | Notes and follow-up | General notes, maintenance, Incident Reports, Students of Concern, and follow-up status |
 | Reporting | Missing-detail checks, editable report text, template preferences, copy, and TXT download |
 | Local persistence | Autosave, resume after refresh, older-save normalization, and separate demo storage |
+| Offline app | Installable to the home screen, opens with no signal after the first visit, and asks before reloading for updates |
+| Sharing | Copy, system share sheet on supported devices, and TXT download |
 | Interface | Maroon light/dark themes, large touch controls, labelled inputs, keyboard focus states, and reduced-motion support |
 
 ## Engineering highlights

@@ -107,10 +107,29 @@ it('builds the full report: sweeps list, coverage notes, every sweep and Extra N
     [
       'Extra Notes:',
       'Quiet night overall.',
-      '9:10 PM — Woodstock — B103 open.',
-      '12:15 AM — Les Prince Floor 3 — Maintenance: Ceiling leak. Actions taken: Placed bucket. Contacted: Facilities. Status: observed, work order not yet submitted.',
+      '',
+      '9:10 PM — Woodstock',
+      'B103 open.',
+      '',
+      '12:15 AM — Les Prince Floor 3 — Maintenance',
+      'Ceiling leak.',
+      '- Actions taken: Placed bucket.',
+      '- Contacted: Facilities.',
+      '- Status: Observed, work order not yet submitted.',
     ].join('\n'),
   )
+})
+
+it('keeps line breaks in a note description, one sentence per line', () => {
+  let s = testShift()
+  s = upsertNote(s, createNote('general', { time: '22:00', description: 'loud music in 4B\n\n  asked residents to lower it.  \nquiet by 10:10' }))
+  expect(generateReport(s)).toContain('10:00 PM\nLoud music in 4B.\nAsked residents to lower it.\nQuiet by 10:10.')
+})
+
+it('formats a note without a time or description without leaving gaps', () => {
+  let s = testShift()
+  s = upsertNote(s, createNote('follow-up', { description: '', followUp: 'check B-wing door tomorrow', reference: '#77' }))
+  expect(generateReport(s)).toContain('Follow-up\n[not recorded]\n- Ref: #77\n- Status: Open.\n- Follow-up: Check B-wing door tomorrow.')
 })
 
 it('only says something was submitted or filed when recorded that way', () => {
@@ -118,8 +137,8 @@ it('only says something was submitted or filed when recorded that way', () => {
   s = upsertNote(s, createNote('ir', { time: '23:30', description: 'Noise complaint', reference: '1234', status: 'filed' }))
   s = upsertNote(s, createNote('soc', { time: '23:45', description: 'Check-in' }))
   const r = generateReport(s)
-  expect(r).toContain('IR: Noise complaint. Ref #1234. Status: IR filed.')
-  expect(r).toContain('SOC: Check-in. Status: SOC not yet filed.')
+  expect(r).toContain('11:30 PM — IR\nNoise complaint.\n- Ref: #1234\n- Status: IR filed.')
+  expect(r).toContain('11:45 PM — SOC\nCheck-in.\n- Status: SOC not yet filed.')
 })
 
 it('includes per-location observations without changing counts', () => {

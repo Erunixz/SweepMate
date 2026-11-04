@@ -68,17 +68,45 @@ export function generateSweepSection(shift: Shift, sweepIndex: number, t: Report
   return cleanText([heading, ...reportBuildingOrder().map((b) => buildingSection(shift, sweep, b, t))].join('\n\n'))
 }
 
-function noteLine(note: Note, t: ReportTemplate): string {
+const sentence = (s: string) => {
+  const line = stripEndPunct(oneLine(s))
+  return line ? `${line.charAt(0).toUpperCase()}${line.slice(1)}.` : ''
+}
+
+/** Multi-line text keeps the user's line breaks: one tidy sentence per non-empty line. */
+const paragraph = (s: string) =>
+  s
+    .split('\n')
+    .map(sentence)
+    .filter(Boolean)
+    .join('\n')
+
+/**
+ * One note as a small block that reads well once pasted:
+ *
+ *   12:15 AM — Les Prince Floor 3 — Maintenance
+ *   Ceiling leak.
+ *   - Actions taken: Placed bucket.
+ *   - Status: Observed, work order not yet submitted.
+ */
+function noteBlock(note: Note, t: ReportTemplate): string {
   const meta = NOTE_KINDS[note.kind]
-  const prefix = note.kind === 'general' ? '' : `${meta.short}: `
-  const pieces = [`${prefix}${stripEndPunct(oneLine(note.description))}.`]
-  if (note.action.trim()) pieces.push(`Actions taken: ${stripEndPunct(oneLine(note.action))}.`)
-  if (note.contacts.trim()) pieces.push(`Contacted: ${stripEndPunct(oneLine(note.contacts))}.`)
-  if (note.reference.trim()) pieces.push(`Ref #${oneLine(note.reference)}.`)
+  const heading = [formatTime12(note.time), oneLine(note.location), note.kind === 'general' ? '' : meta.short]
+    .filter(Boolean)
+    .join(t.noteSeparator)
   const status = meta.statuses.find((s) => s.value === note.status)
-  if (status) pieces.push(`Status: ${status.report}.`)
-  if (note.followUp.trim()) pieces.push(`Follow-up: ${stripEndPunct(oneLine(note.followUp))}.`)
-  return [formatTime12(note.time), oneLine(note.location), pieces.join(' ')].filter(Boolean).join(t.noteSeparator)
+  const detail = (label: string, value: string) => (value ? `- ${label}: ${value}` : '')
+  return [
+    heading,
+    paragraph(note.description) || t.unanswered,
+    detail('Actions taken', sentence(note.action)),
+    detail('Contacted', sentence(note.contacts)),
+    detail('Ref', oneLine(note.reference) && `#${oneLine(note.reference).replace(/^#/, '')}`),
+    detail('Status', status ? sentence(status.report) : ''),
+    detail('Follow-up', sentence(note.followUp)),
+  ]
+    .filter(Boolean)
+    .join('\n')
 }
 
 export function generateReport(shift: Shift, t: ReportTemplate = DEFAULT_REPORT_TEMPLATE): string {
@@ -99,14 +127,14 @@ export function generateReport(shift: Shift, t: ReportTemplate = DEFAULT_REPORT_
   }
   shift.sweeps.forEach((_, i) => blocks.push(generateSweepSection(shift, i, t)))
 
-  const extra = [
-    ...shift.extraNotes
-      .split('\n')
-      .map((l) => l.trim())
-      .filter(Boolean),
-    ...sortNotes(shift, shift.notes).map((n) => noteLine(n, t)),
-  ]
-  if (shift.mode === 'full' || extra.length) blocks.push([t.extraNotesHeading, ...(extra.length ? extra : [t.noneLine])].join('\n'))
+  // Free-text lines stay together; each recorded note is its own block, separated by a blank line.
+  const freeText = shift.extraNotes
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .join('\n')
+  const extra = [freeText, ...sortNotes(shift, shift.notes).map((n) => noteBlock(n, t))].filter(Boolean)
+  if (shift.mode === 'full' || extra.length) blocks.push(`${t.extraNotesHeading}\n${extra.length ? extra.join('\n\n') : t.noneLine}`)
 
   return cleanText(blocks.join('\n\n'))
 }

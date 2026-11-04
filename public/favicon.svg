@@ -1,1 +1,45 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="8" fill="#751c36"/><text x="32" y="45" font-family="Georgia,serif" font-size="40" text-anchor="middle" fill="#fff">S</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#8f2645"/>
+      <stop offset="1" stop-color="#561327"/>
+    </linearGradient>
+    <!-- Tread grooves cut out of each print -->
+    <mask id="tread" maskUnits="userSpaceOnUse" x="-90" y="-130" width="180" height="260">
+      <rect x="-90" y="-130" width="180" height="260" fill="#fff"/>
+      <g stroke="#000" stroke-width="12" stroke-linecap="round">
+        <path d="M-44 -62 H50 M-50 -28 H54 M-40 6 H44"/>
+        <path d="M-18 84 H28"/>
+      </g>
+    </mask>
+    <!-- Left shoe print (big toe on the right), toe up, centred on the origin; mirror for the right foot -->
+    <g id="print" mask="url(#tread)">
+      <path d="M6 -110 C46 -110 64 -76 62 -38 C60 -6 46 12 40 34 C36 46 -26 46 -30 34 C-36 10 -58 -10 -56 -46 C-54 -84 -32 -110 6 -110 Z"/>
+      <path d="M-30 58 C-10 51 24 51 40 58 C44 90 32 114 6 114 C-20 114 -34 92 -30 58 Z"/>
+    </g>
+    <!-- Crescent: a disc with an offset disc cut away -->
+    <mask id="crescent" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <circle cx="132" cy="132" r="54" fill="#fff"/>
+      <circle cx="160" cy="112" r="46" fill="#000"/>
+    </mask>
+  </defs>
+
+  <!-- scripts/icons.mjs edits rx and the #art transform for the full-bleed phone icons -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <g id="art">
+  <!-- Overnight: crescent moon and two stars in the open corner -->
+  <g fill="#fff">
+    <rect width="512" height="512" mask="url(#crescent)" opacity="0.92"/>
+    <path d="M236 84 l6 14 14 6 -14 6 -6 14 -6 -14 -14 -6 14 -6 z" opacity="0.8"/>
+    <path d="M96 236 l4 9 9 4 -9 4 -4 9 -4 -9 -9 -4 9 -4 z" opacity="0.6"/>
+  </g>
+
+  <!-- Walking trail toward the upper right: older steps fade behind the newest -->
+  <g fill="#fff">
+    <use href="#print" transform="translate(172 392) rotate(35) scale(0.68)" opacity="0.32"/>
+    <use href="#print" transform="translate(328 312) rotate(35) scale(-0.68 0.68)" opacity="0.64"/>
+    <use href="#print" transform="translate(346 142) rotate(35) scale(0.68)"/>
+  </g>
+  </g>
+</svg>

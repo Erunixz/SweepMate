@@ -20,7 +20,7 @@ export interface ReportTemplate {
   /** {time} */
   buildingEnd: string
   extraNotesHeading: string
-  /** Parts are joined with this between time, location and text. */
+  /** Joins the time, location and type in each note's heading line. */
   noteSeparator: string
   unanswered: string
   skipped: string
@@ -56,7 +56,7 @@ export const TEMPLATE_FIELD_HELP: Record<keyof ReportTemplate, string> = {
   buildingCAs: 'CAs on a building sweep. Token: {names}',
   buildingEnd: 'Building sweep end. Token: {time}',
   extraNotesHeading: 'Heading above extra notes',
-  noteSeparator: 'Between time, location and text in a note line',
+  noteSeparator: 'Between time, location and type in a note heading',
   unanswered: 'Shown for anything not recorded',
   skipped: 'Shown for a location marked Not Checked',
   noneLine: 'Shown when there are no extra notes',

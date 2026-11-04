@@ -5,7 +5,7 @@ import { SaveIndicator } from '../components/SaveIndicator'
 import { ConfirmSheet } from '../components/Sheet'
 import { Button, Card, Header, Page, TextInput } from '../components/ui'
 import { TEMPLATE_FIELD_HELP, type ReportTemplate } from '../config/reportTemplate'
-import { copyText, downloadText } from '../domain/clipboard'
+import { canShareText, copyText, downloadText, shareText } from '../domain/clipboard'
 import { missingDetails, missingEntries } from '../domain/progress'
 import { cleanText, generateReport, generateSweepSection, reportFileName } from '../domain/report'
 import { getBuilding, getRoute } from '../domain/route'
@@ -36,6 +36,12 @@ export function Report() {
   }
   const copy = async (s: string, what: string) => flash((await copyText(cleanText(s))) ? `${what} copied` : 'Copy failed – select the text and copy manually')
 
+  const canShare = canShareText()
+  const share = async () => {
+    const result = await shareText(reportFileName(shift).replace(/\.txt$/, ''), cleanText(text))
+    if (result === 'failed') flash('Share failed – use Copy instead')
+  }
+
   const totalMissing = missingCount + details.length
   const quick = shift.mode === 'quick'
 
@@ -48,7 +54,7 @@ export function Report() {
             <h2 className="text-xl font-semibold">Export report</h2>
             <p className="text-muted text-sm">{quick ? 'Your building’s counts, times and notes.' : 'Every sweep in one entry, in your report format.'}</p>
           </div>
-          <div className="grid grid-cols-[1fr_auto] gap-2">
+          <div className={`grid gap-2 ${canShare ? 'grid-cols-[1fr_auto_auto]' : 'grid-cols-[1fr_auto]'}`}>
             <Button
               variant="primary"
               size="lg"
@@ -57,6 +63,11 @@ export function Report() {
               <Icon name="copy" />
               {quick ? 'Copy Report' : 'Copy Full Report'}
             </Button>
+            {canShare && (
+              <Button size="lg" onClick={share} aria-label="Share report" title="Share">
+                <Icon name="share" />
+              </Button>
+            )}
             <Button
               size="lg"
               onClick={() => downloadText(reportFileName(shift), cleanText(text))}

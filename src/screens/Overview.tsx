@@ -6,7 +6,7 @@ import { SaveIndicator } from '../components/SaveIndicator'
 import { Sheet } from '../components/Sheet'
 import { Badge, Button, Card, Eyebrow, Header, Page, ProgressBar, TextInput } from '../components/ui'
 import { SHIFT_TYPE_LABELS } from '../config/schedules'
-import { copyText, downloadText } from '../domain/clipboard'
+import { canShareText, copyText, downloadText, shareText } from '../domain/clipboard'
 import { buildingProgress, firstUnansweredIndex, hasStarted, isDone, missingDetails, missingEntries, sweepProgress } from '../domain/progress'
 import { cleanText, generateReport, reportFileName } from '../domain/report'
 import { getBuilding, getRoute, shiftBuildings } from '../domain/route'
@@ -197,7 +197,7 @@ function ReportExport({ shift }: { shift: Shift }) {
           {missing} item{missing === 1 ? '' : 's'} not recorded yet – shown as “{template.unanswered}”.
         </p>
       )}
-      <div className="grid grid-cols-[1fr_auto] gap-2">
+      <div className={`grid gap-2 ${canShareText() ? 'grid-cols-[1fr_auto_auto]' : 'grid-cols-[1fr_auto]'}`}>
         <Button
           variant="primary"
           size="lg"
@@ -206,6 +206,18 @@ function ReportExport({ shift }: { shift: Shift }) {
           <Icon name="copy" />
           {quick ? 'Copy Report' : 'Copy Full Report'}
         </Button>
+        {canShareText() && (
+          <Button
+            size="lg"
+            aria-label="Share report"
+            title="Share"
+            onClick={async () => {
+              if ((await shareText(reportFileName(shift).replace(/\.txt$/, ''), text)) === 'failed') setStatus('Share failed – use Copy instead')
+            }}
+          >
+            <Icon name="share" />
+          </Button>
+        )}
         <Button size="lg" onClick={() => downloadText(reportFileName(shift), text)} aria-label="Download TXT">
           <Icon name="download" />
           TXT

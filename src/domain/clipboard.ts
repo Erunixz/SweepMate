@@ -24,6 +24,21 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
+/** True where the system share sheet exists for text (most phones; some desktop browsers). */
+export function canShareText(): boolean {
+  return typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+}
+
+/** Open the system share sheet. 'cancelled' means the user closed it, which is not an error. */
+export async function shareText(title: string, text: string): Promise<'shared' | 'cancelled' | 'failed'> {
+  try {
+    await navigator.share({ title, text })
+    return 'shared'
+  } catch (e) {
+    return e instanceof DOMException && e.name === 'AbortError' ? 'cancelled' : 'failed'
+  }
+}
+
 export function downloadText(filename: string, text: string) {
   // CRLF so the file opens cleanly in Notepad as well as everywhere else.
   const blob = new Blob([text.replace(/\n/g, '\r\n')], { type: 'text/plain;charset=utf-8' })

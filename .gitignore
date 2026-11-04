@@ -1,0 +1,28 @@
+# Local build plan
+BuildPlan.MD
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.vercel/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/

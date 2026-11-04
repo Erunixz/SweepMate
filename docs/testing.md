@@ -12,7 +12,7 @@ npm run build
 
 The build includes TypeScript checking. `npm run typecheck` is available separately, and `npm run test:watch` runs tests during development.
 
-The current suite contains 67 tests across 10 files. The latest local verification used Node 20.17.0 and npm 10.8.2 on Windows. The new CI workflow targets Node 24 on Ubuntu; a hosted CI result is pending its first GitHub run.
+The current suite contains 69 tests across 10 files. The latest local verification used Node 20.17.0 and npm 10.8.2 on Windows. The new CI workflow targets Node 24 on Ubuntu; a hosted CI result is pending its first GitHub run.
 
 | Area | Evidence |
 | --- | --- |

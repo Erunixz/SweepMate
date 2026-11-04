@@ -12,27 +12,29 @@ Built for the Princestock workflow at Woodstock and Les Prince, SweepMate helps 
 
 An overnight residence shift involves more than walking through a building. CAs check shared spaces, record how many people are present, note maintenance issues or other observations, and prepare a record of the night's coverage. Those checks repeat throughout the shift, often across midnight and across buildings with different layouts.
 
-SweepMate grew out of actual residence sweep notes and the specific routes used in Woodstock and Les Prince. The motivation was to make the recording process fit the work: show the next room while walking, capture details when they are observed, and use those entries to assemble the report at the end. The goal is less time reconstructing a round from scattered notes and more attention available for the round itself.
+All of it ends up in StarRez, the residence system where coverage reports are filed. Without a dedicated tool, that means jotting counts and observations wherever is quickest during the round, then retyping them into StarRez's format at the end of a long night, when details are easiest to lose.
 
-That purpose shapes the small details. Woodstock's route visits the basement before returning to the first floor. Les Prince alternates wings as the CA moves downstairs. A 1 AM sweep stays with the overnight shift it belongs to. An empty room, a skipped room, and an unfinished entry remain distinct so the final report reflects what happened.
+SweepMate grew out of actual residence sweep notes and the specific routes used in Woodstock and Les Prince. The motivation was to make the recording process fit the work: show the next room while walking, capture details when they are observed, and turn those entries into a report that is ready to paste into StarRez, either the whole night at once or one sweep at a time. The goal is less time reconstructing a round from scattered notes and more attention available for the round itself.
+
+That purpose shapes the small details. Woodstock's route visits the basement before returning to the first floor. Les Prince alternates wings as the CA moves downstairs. A 1 AM sweep stays with the overnight shift it belongs to. An empty room, a skipped room, and an unfinished entry remain distinct so the final report reflects what happened. Rounds pass through basements and stairwells with weak signal, so the app works offline and saves every entry on the phone as it is made.
 
 ## Who it is for
 
-- **CAs coordinating full coverage:** plan the night's sweeps, record who is covering each building, track progress, and prepare a combined report.
-- **CAs completing one building:** start a Quick sweep, record the route, and export that building's section without setting up the whole coverage shift.
-- **CAs returning to unfinished work:** resume saved rounds, revisit a room, and keep observations and follow-up notes attached to the relevant sweep.
+- **Lead CA (Start Shift):** runs the night's full coverage. Plan the sweeps, record who covers each building, track progress, and copy the combined report, or a single sweep, into StarRez.
+- **Support CAs (Quick sweep):** help the lead with individual sweeps. Record one building's route and copy that building's section without setting up the whole coverage shift.
+- **Anyone returning to unfinished work:** resume saved rounds, revisit a room, and keep observations and follow-up notes attached to the relevant sweep.
 
 ## From the round to the report
 
 At the start of a shift, a CA sets the schedule and team. During a round, the app presents one location at a time with quick count controls and space for observations. Notes can be added where they arise, and the overview shows which parts of the round still need attention.
 
-At the end, those records become a consistent plain-text report that can be reviewed, edited, copied, or downloaded. Walking order and report order are handled separately, so the CA can follow the physical route while still producing the expected reporting format.
+At the end, those records become a consistent plain-text report in the StarRez format that can be reviewed, edited, copied, shared, or downloaded. Walking order and report order are handled separately, so the CA can follow the physical route while still producing the expected reporting format.
 
 The app opens directly in a browser without an account. Large controls, light and dark themes, and a restrained interface keep the focus on recording the next room.
 
 ## Try the workflow
 
-**New to SweepMate?** [Watch the 2-minute video tutorial](docs/media/sweepmate-tutorial.mp4). It covers setting up a shift, walking a route, adding a note and copying the report.
+**New to SweepMate?** [Watch the 2-minute video tutorial](docs/media/sweepmate-tutorial.mp4). It follows a Lead CA through setting up a shift, walking a route, logging a work-order note, and copying the report or a single sweep for StarRez.
 
 [![SweepMate video tutorial](docs/media/sweepmate-tutorial-poster.jpg)](docs/media/sweepmate-tutorial.mp4)
 
@@ -42,7 +44,7 @@ Open [sweep-mate.vercel.app](https://sweep-mate.vercel.app/) and select **Try a 
 2. Continue the **11:00 PM** Woodstock sweep. Record **0** for an empty room, then use **Not Checked** on the next location.
 3. Add a note during the walkthrough and see its location and sweep prefilled.
 4. Open **Report** to compare recorded values, `[not checked]`, and `[not recorded]`. Copy the report or download a TXT file.
-5. Return home and try **Quick sweep** for a single-building workflow without coverage-lead setup.
+5. Return home and try **Quick sweep**, the single-building workflow for support CAs, with no Lead CA setup.
 
 ```text
 Set up a shift or quick sweep
@@ -84,7 +86,7 @@ The engineering decisions follow the needs of the shift: preserve observations, 
 | Normalize saved JSON at the storage boundary | Older records can load with defaults; invalid shifts are detected | [Storage](src/domain/storage.ts), [migration tests](src/domain/storage.test.ts) |
 | Reuse the recording model for both modes | Quick sweeps share the same route, note, and persistence behavior | [Quick-sweep domain tests](src/domain/quickShift.test.ts), [workflow tests](src/screens/QuickSweep.test.tsx) |
 
-The current suite has **67 automated tests** covering routes, overnight schedules, saved records, report output, and UI workflows. See the [testing guide](docs/testing.md) for the checks and how to run them.
+The current suite has **69 automated tests** covering routes, overnight schedules, saved records, report output, and UI workflows. See the [testing guide](docs/testing.md) for the checks and how to run them.
 
 ### Suggested code-review path
 

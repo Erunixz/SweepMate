@@ -23,6 +23,8 @@ const outputs = [
   ['pwa-192x192.png', svg, 192],
   ['pwa-512x512.png', svg, 512],
   ['apple-touch-icon-180x180.png', fullBleed(), 180],
+  // iOS and some apps request this default path without reading the page's <link> tags.
+  ['apple-touch-icon.png', fullBleed(), 180],
   ['maskable-icon-512x512.png', fullBleed(0.8), 512],
 ]
 for (const [name, source, size] of outputs) {

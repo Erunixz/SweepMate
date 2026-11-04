@@ -1,4 +1,4 @@
-import { getRoute, walkingBuildingOrder } from './route'
+import { getRoute, shiftBuildings } from './route'
 import { sweepBuildingCAs } from './shift'
 import { formatTime12 } from './time'
 import type { RouteLocation, Shift, Sweep } from './types'
@@ -34,7 +34,7 @@ export function buildingProgress(sweep: Sweep, buildingId: string): Progress {
 }
 
 export function sweepProgress(shift: Shift, sweep: Sweep): Progress {
-  return walkingBuildingOrder(shift.startingBuildingId).reduce(
+  return shiftBuildings(shift).reduce(
     (p, b) => add(p, buildingProgress(sweep, b.id)),
     empty(),
   )
@@ -60,10 +60,10 @@ export interface MissingGroup {
 /** Shift and building details the report needs but that haven't been recorded. */
 export function missingDetails(shift: Shift): string[] {
   const out: string[] = []
-  if (!shift.phonePickup) out.push('Coverage phone pick-up time')
+  if (shift.mode === 'full' && !shift.phonePickup) out.push('Coverage phone pick-up time')
   if (shift.sweeps.length === 0) out.push('Scheduled sweep times')
   shift.sweeps.forEach((sweep) => {
-    for (const b of walkingBuildingOrder(shift.startingBuildingId)) {
+    for (const b of shiftBuildings(shift)) {
       const bs = sweep.buildings[b.id]
       const label = `${formatTime12(sweep.scheduledTime)} ${b.name}`
       if (!bs?.actualStart) out.push(`${label}: start time`)
@@ -81,7 +81,7 @@ export function missingDetails(shift: Shift): string[] {
 export function missingEntries(shift: Shift): MissingGroup[] {
   const groups: MissingGroup[] = []
   shift.sweeps.forEach((sweep, i) => {
-    for (const b of walkingBuildingOrder(shift.startingBuildingId)) {
+    for (const b of shiftBuildings(shift)) {
       const entries = sweep.buildings[b.id]?.entries ?? {}
       const locations = getRoute(b.id).filter((loc) => !entries[loc.id])
       if (locations.length) groups.push({ sweep, sweepNumber: i + 1, buildingId: b.id, locations })

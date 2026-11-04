@@ -30,7 +30,7 @@ export function CAPicker({
                 aria-pressed={on}
                 onClick={() => onChange(on ? selected.filter((n) => n !== name) : [...selected, name])}
                 className={cx(
-                  'min-h-11 rounded-full border px-4 text-sm font-semibold',
+                  'min-h-11 rounded-md border px-4 text-sm font-semibold',
                   on ? 'border-accent bg-accent-soft text-accent' : 'border-line bg-surface text-muted',
                 )}
               >

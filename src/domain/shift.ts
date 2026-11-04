@@ -1,5 +1,6 @@
 /** Pure, immutable operations on shifts. Every function returns a new Shift. */
 import { newId } from './ids'
+import { getBuilding } from './route'
 import { minutesIntoShift } from './time'
 import type { BuildingSweep, LocationEntry, Note, NoteKind, Shift, ShiftType, Sweep } from './types'
 
@@ -44,6 +45,8 @@ export function createShift(input: NewShiftInput, now = new Date()): Shift {
   const { sweepTimes, isDemo, ...details } = input
   const shift: Shift = {
     id: newId(),
+    mode: 'full',
+    quickBuildingId: null,
     isDemo: isDemo ?? false,
     ...cleanDetails(details),
     sweeps: [],
@@ -58,6 +61,19 @@ export function createShift(input: NewShiftInput, now = new Date()): Shift {
     shift,
     sweepTimes.map((time) => ({ time })),
   )
+}
+
+/** A single-building sweep uses the same storage and recording model as full coverage. */
+export function createQuickShift(input: { date: string; buildingId: string; time: string; myName?: string; otherCAs?: string[] }): Shift {
+  if (!getBuilding(input.buildingId)) throw new Error('Choose a valid building.')
+  const names = caPool({ myName: input.myName ?? '', otherCAs: input.otherCAs ?? [] })
+  const shift = createShift({
+    date: input.date, type: 'weekday', phonePickup: '', startTime: input.time, endTime: '',
+    myName: input.myName ?? '', otherCAs: input.otherCAs ?? [],
+    buildingCAs: { [input.buildingId]: names }, startingBuildingId: input.buildingId,
+    sweepTimes: [input.time],
+  })
+  return { ...shift, mode: 'quick', quickBuildingId: input.buildingId }
 }
 
 function touch(shift: Shift): Shift {

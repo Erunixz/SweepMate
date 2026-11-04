@@ -1,6 +1,6 @@
 import { cleanText, generateReport, generateSweepSection } from './report'
 import { getRoute } from './route'
-import { createNote, setEntry, updateBuildingSweep, updateSweep, upsertNote } from './shift'
+import { createNote, setEntry, updateBuildingSweep, upsertNote } from './shift'
 import { testShift } from './testShift'
 import type { LocationEntry, Shift } from './types'
 
@@ -63,14 +63,14 @@ it('reports Les Prince north-first on every floor, regardless of walking directi
   const section = generateSweepSection(s, 0)
   for (const f of ['6', '5', '4', '3', '2']) {
     expect(section).toContain(
-      `${f}: ${n(`f${f}-north-study`)} in north study room; ${n(`f${f}-north-kitchen`)} in north kitchen; ` +
-        `${n(`f${f}-south-study`)} in south study room; ${n(`f${f}-south-kitchen`)} in south kitchen.`,
+      `${f}:\n${n(`f${f}-north-study`)} in north study room.\n${n(`f${f}-north-kitchen`)} in north kitchen.\n` +
+        `${n(`f${f}-south-study`)} in south study room.\n${n(`f${f}-south-kitchen`)} in south kitchen.`,
     )
   }
-  expect(section).toContain(`1: ${n('f1-study')} in study room; ${n('f1-kitchen')} in kitchen.`)
+  expect(section).toContain(`1:\n${n('f1-study')} in study room.\n${n('f1-kitchen')} in kitchen.`)
   expect(section).toContain(`Games room: ${n('games')}.\nLaundry room: ${n('laundry')}.`)
   // Floors are separated by blank lines, and Les Prince follows Woodstock.
-  expect(section).toMatch(/south kitchen\.\n\n5: /)
+  expect(section).toMatch(/south kitchen\.\n\n5:\n/)
   expect(section.indexOf('Woodstock')).toBeLessThan(section.indexOf('Les Prince'))
 })
 
@@ -88,7 +88,6 @@ it('labels unanswered, Not Checked, missing times and CAs instead of inventing t
 
 it('builds the full report: sweeps list, coverage notes, every sweep and Extra Notes', () => {
   let s = withWoodstock(testShift())
-  s = updateSweep(s, s.sweeps[1]!.id, { missed: true, missedReason: 'Responding to a call' })
   s = { ...s, extraNotes: 'Quiet night overall.\n\n' }
   s = upsertNote(s, createNote('general', { time: '21:10', location: 'Woodstock', description: 'B103 open' }))
   s = upsertNote(
@@ -102,7 +101,7 @@ it('builds the full report: sweeps list, coverage notes, every sweep and Extra N
       'SWEEPS:\n9:00 PM, 11:00 PM, 1:00 AM\n\nNOTES:\nCoverage date: October 29, 2026\nCoverage phone pick up: 8:50 PM\nStart: 9:00 PM\n\n9:00 PM\n\nWoodstock',
     ),
   ).toBe(true)
-  expect(r).toContain('11:00 PM\n\nSweep not completed: Responding to a call.')
+  expect(r).toContain('11:00 PM\n\nWoodstock\nStart time: [not recorded]')
   expect(r).toContain('1:00 AM\n\nWoodstock\nStart time: [not recorded]')
   expect(r).toContain(
     [

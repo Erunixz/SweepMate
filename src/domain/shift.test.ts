@@ -66,13 +66,12 @@ it('editing the schedule keeps data on retained sweeps and detaches notes from r
   expect(s.notes[0]!.sweepId).toBeNull()
 })
 
-it('missing entries skip missed sweeps and Not Checked locations', () => {
+it('missing entries include all sweeps but exclude Not Checked locations', () => {
   let s = testShift()
   const [first, second, third] = s.sweeps
-  s = { ...s, sweeps: s.sweeps.map((w) => (w.id === second!.id ? { ...w, missed: true } : w)) }
   for (const loc of getRoute('woodstock')) s = setEntry(s, first!.id, 'woodstock', loc.id, skipped)
   const groups = missingEntries(s)
-  expect(groups.some((g) => g.sweep.id === second!.id)).toBe(false)
+  expect(groups.some((g) => g.sweep.id === second!.id)).toBe(true)
   expect(groups.some((g) => g.sweep.id === first!.id && g.buildingId === 'woodstock')).toBe(false)
   expect(groups.some((g) => g.sweep.id === third!.id)).toBe(true)
 })

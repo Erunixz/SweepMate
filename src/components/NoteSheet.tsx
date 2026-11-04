@@ -42,8 +42,8 @@ function NoteForm({ context, note, onDone }: { context?: NoteContext; note: Note
       note ??
       createNote('general', {
         time: nowTime(),
-        sweepId: context?.sweepId ?? null,
-        buildingId: context?.buildingId ?? null,
+        sweepId: context?.sweepId ?? (shift.mode === 'quick' ? shift.sweeps[0]!.id : null),
+        buildingId: context?.buildingId ?? shift.quickBuildingId,
         location: context?.location ?? '',
       }),
   )
@@ -76,7 +76,7 @@ function NoteForm({ context, note, onDone }: { context?: NoteContext; note: Note
         <TextInput label="Time" type="time" value={draft.time} onChange={(e) => set({ time: e.target.value })} />
         <Button onClick={() => set({ time: nowTime() })}>Now</Button>
       </div>
-      <Select
+      {shift.mode === 'full' && <Select
         label="Sweep"
         value={draft.sweepId ?? ''}
         onChange={(e) => set({ sweepId: e.target.value || null })}
@@ -84,7 +84,7 @@ function NoteForm({ context, note, onDone }: { context?: NoteContext; note: Note
           { value: '', label: 'Whole shift (not tied to a sweep)' },
           ...shift.sweeps.map((s, i) => ({ value: s.id, label: `Sweep ${i + 1} (${labelShiftTime(shift.startTime, s.scheduledTime)})` })),
         ]}
-      />
+      />}
       <TextInput label="Location" value={draft.location} onChange={(e) => set({ location: e.target.value })} placeholder="e.g. LP Floor 3 North lounge" />
       <TextArea
         label="Description"

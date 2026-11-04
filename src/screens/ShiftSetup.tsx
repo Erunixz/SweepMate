@@ -164,7 +164,7 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
         </ol>
 
         <div className="pt-2">
-          <h2 className="text-[28px] font-extrabold tracking-tight leading-tight">{meta.heading}</h2>
+          <h2 className="text-[28px] font-semibold tracking-tight leading-tight">{meta.heading}</h2>
           <p className="text-muted text-sm mt-1">{meta.sub}</p>
         </div>
 
@@ -200,7 +200,7 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
             <>
               <TextInput label="My name" value={myName} onChange={(e) => setMyName(e.target.value)} autoComplete="name" placeholder="Your name" />
               <NameList label="Other CAs on coverage" names={otherCAs} onChange={setOtherCAs} addLabel="Add CA" />
-              <div className="flex flex-col gap-4 rounded-3xl bg-surface border border-line/70 shadow-card p-4">
+              <div className="flex flex-col gap-4 rounded-lg bg-surface border border-line/70 p-4">
                 {BUILDINGS.map((b) => (
                   <CAPicker
                     key={b.id}
@@ -241,7 +241,7 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
                 />
               </div>
 
-              <section className="flex flex-col gap-3 rounded-3xl bg-surface border border-line/70 shadow-card p-4">
+              <section className="flex flex-col gap-3 rounded-lg bg-surface border border-line/70 p-4">
                 <h3 className="text-sm font-semibold">Scheduled sweeps</h3>
                 {rows.length === 0 && <p className="text-sm text-muted">No sweeps yet – add each scheduled sweep time.</p>}
                 <ol className="flex flex-col gap-2">
@@ -261,7 +261,7 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
                   Add sweep
                 </Button>
                 {removedWithData > 0 && (
-                  <p role="alert" className="text-sm rounded-xl bg-warn-soft text-warn p-2">
+                  <p role="alert" className="text-sm rounded-md bg-warn-soft text-warn p-2">
                     {removedWithData} removed sweep{removedWithData > 1 ? 's have' : ' has'} recorded counts that will be deleted when you save.
                   </p>
                 )}
@@ -284,7 +284,7 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
           )}
 
           {errors.length > 0 && (
-            <div role="alert" className="rounded-2xl bg-danger-soft text-danger p-3 text-sm">
+            <div role="alert" className="rounded-lg bg-danger-soft text-danger p-3 text-sm">
               <ul className="list-disc pl-5">
                 {errors.map((e) => (
                   <li key={e}>{e}</li>
@@ -293,7 +293,7 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
             </div>
           )}
 
-          <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line/60 bg-bg/85 backdrop-blur-xl">
+          <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line/60 bg-bg">
             <div className="mx-auto max-w-2xl px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               <Button type="submit" variant="primary" size="lg" className="w-full">
                 {last ? (editing ? 'Save changes' : 'Start shift') : 'Next'}
@@ -333,7 +333,7 @@ function SweepTimeRow({
         value={row.time}
         onChange={(e) => onChange(e.target.value)}
         aria-describedby={nextDay ? `${id}-next` : undefined}
-        className="flex-1 min-h-11 rounded-xl border border-line bg-surface-2/60 px-3"
+        className="flex-1 min-h-11 rounded-md border border-line bg-surface-2/60 px-3"
       />
       <span id={`${id}-next`} className="w-16 text-xs text-muted">
         {nextDay ? 'next day' : ''}
@@ -370,7 +370,7 @@ function NameList({
             value={name}
             autoComplete="off"
             onChange={(e) => onChange(names.map((n, j) => (j === i ? e.target.value : n)))}
-            className="flex-1 min-h-12 rounded-xl border border-line bg-surface-2/60 px-3 focus:outline-none focus:ring-4 focus:ring-accent/15 focus:border-accent focus:bg-surface"
+            className="flex-1 min-h-12 rounded-md border border-line bg-surface-2/60 px-3 focus:outline-none focus:ring-4 focus:ring-accent/15 focus:border-accent focus:bg-surface"
             placeholder="Name"
           />
           {names.length > 1 && (

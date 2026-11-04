@@ -14,7 +14,7 @@ export function LoadProblemBanner() {
   const { loadProblem, dismissLoadProblem } = useStore()
   if (!loadProblem) return null
   return (
-    <div role="alert" className="rounded-xl bg-warn-soft text-warn p-3 text-sm flex flex-col gap-2">
+    <div role="alert" className="rounded-md bg-warn-soft text-warn p-3 text-sm flex flex-col gap-2">
       <p className="font-semibold">{messages[loadProblem]}</p>
       <Button variant="ghost" className="self-end min-h-9" onClick={dismissLoadProblem}>
         Dismiss

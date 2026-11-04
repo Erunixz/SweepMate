@@ -1,4 +1,5 @@
 import { Notes } from './screens/Notes'
+import { QuickSetup } from './screens/QuickSetup'
 import { Overview } from './screens/Overview'
 import { Report } from './screens/Report'
 import { ShiftSetup } from './screens/ShiftSetup'
@@ -9,6 +10,7 @@ import { ThemeProvider } from './state/themeContext'
 
 function Screens() {
   const { view, active } = useStore()
+  if (view.name === 'quick-setup') return <QuickSetup key={view.mode} mode={view.mode} />
   if (view.name === 'setup') return <ShiftSetup key={view.mode} mode={active ? view.mode : 'new'} />
   if (!active) return <Welcome />
   switch (view.name) {

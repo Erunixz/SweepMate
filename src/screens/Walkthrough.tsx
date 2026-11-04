@@ -7,7 +7,7 @@ import { Sheet } from '../components/Sheet'
 import { cx } from '../components/cx'
 import { Badge, Button, Card, Header, Page, ProgressBar } from '../components/ui'
 import { buildingProgress, isDone } from '../domain/progress'
-import { getBuilding, getRoute, walkingBuildingOrder } from '../domain/route'
+import { getBuilding, getRoute, shiftBuildings } from '../domain/route'
 import { BuildingDetails } from '../components/BuildingDetails'
 import { setEntry, updateBuildingSweep } from '../domain/shift'
 import { formatTime12, nowTime } from '../domain/time'
@@ -22,7 +22,7 @@ export function Walkthrough({ sweepId, buildingId, index }: { sweepId: string; b
   const sweepIndex = shift.sweeps.findIndex((s) => s.id === sweepId)
   const sweep = shift.sweeps[sweepIndex]
   const building = getBuilding(buildingId)
-  if (!sweep || !building) {
+  if (!sweep || !building || !shiftBuildings(shift).some((b) => b.id === buildingId)) {
     return (
       <Page>
         <p>This sweep no longer exists.</p>
@@ -78,7 +78,7 @@ export function Walkthrough({ sweepId, buildingId, index }: { sweepId: string; b
         <button
           type="button"
           onClick={() => setJumpOpen(true)}
-          className="flex flex-col gap-1.5 rounded-xl p-2 -mx-2 text-left hover:bg-surface-2"
+          className="flex flex-col gap-1.5 rounded-md p-2 -mx-2 text-left hover:bg-surface-2"
           aria-label={`Progress: ${progress.answered + progress.skipped} of ${progress.total} locations done. Open location list`}
         >
           <div className="flex items-center text-xs text-muted gap-2">
@@ -210,7 +210,7 @@ function BuildingSummary({ sweepId, buildingId, onJump }: { sweepId: string; bui
   const route = getRoute(buildingId)
   const entries = sweep.buildings[buildingId]?.entries ?? {}
   const firstMissing = route.findIndex((l) => !entries[l.id])
-  const nextBuilding = walkingBuildingOrder(shift.startingBuildingId).find(
+  const nextBuilding = shiftBuildings(shift).find(
     (b) => b.id !== buildingId && !isDone(buildingProgress(sweep, b.id)),
   )
   const bs = sweep.buildings[buildingId]

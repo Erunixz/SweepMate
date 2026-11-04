@@ -12,7 +12,7 @@ const tabs: { view: 'overview' | 'notes' | 'report'; label: string; icon: IconNa
 export function BottomNav({ badge }: { badge?: Partial<Record<'notes' | 'report', number>> }) {
   const { view, navigate } = useStore()
   return (
-    <nav aria-label="Shift" className="fixed inset-x-0 bottom-0 z-30 border-t border-line/60 bg-bg/85 backdrop-blur-xl">
+    <nav aria-label="Shift" className="fixed inset-x-0 bottom-0 z-30 border-t border-line/60 bg-bg">
       <ul className="mx-auto max-w-2xl grid grid-cols-3 px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {tabs.map((t) => {
           const current = view.name === t.view
@@ -24,8 +24,8 @@ export function BottomNav({ badge }: { badge?: Partial<Record<'notes' | 'report'
                 onClick={() => navigate({ name: t.view })}
                 aria-current={current ? 'page' : undefined}
                 className={cx(
-                  'relative w-full min-h-12 flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-semibold transition',
-                  current ? 'text-accent' : 'text-muted hover:text-fg',
+                  'relative w-full min-h-12 flex flex-col items-center justify-center gap-0.5 border-t-2 text-[11px] font-semibold transition',
+                  current ? 'text-accent border-accent' : 'text-muted border-transparent hover:text-fg hover:bg-surface-2',
                 )}
               >
                 <Icon name={t.icon} size={22} />

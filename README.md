@@ -56,9 +56,9 @@ All configuration is plain TypeScript in [`src/config/`](src/config/). After edi
 
 | What | File | Notes |
 | --- | --- | --- |
-| Walking routes | [`src/config/buildings.ts`](src/config/buildings.ts) | Woodstock is a `sequence` layout, walked exactly as listed. Les Prince is an `alternating` layout: floors are walked top-down, and the side visited first switches on each floor (south first on Floor 6) while study comes before kitchen on every side. `floorOverrides` gives Floor 1 its own study room and kitchen, and `after` holds the games and laundry rooms. |
-| Report order and wording | `src/config/buildings.ts` | `reportBlocks` on each building sets the report lines (for example `6: {count} in north study room; …`), separate from walking order. Blocks are separated by a blank line. `REPORT_BUILDING_ORDER` sets the order of buildings within each sweep. |
-| Shift hours, phone pick-up and sweep times | [`src/config/schedules.ts`](src/config/schedules.ts) | The built-in defaults are 9:00 PM–8:00 AM with no sweep times. In the app, set the times on Shift setup and tap **Save times as … default** to remember them for that shift type on that device. |
+| Walking routes | [`src/config/buildings.ts`](src/config/buildings.ts) | Woodstock walks common rooms on Floors 6–2, then the basement study rooms (101E, 101C), laundry and games room, then the first-floor north kitchen and Floor 1 common room. Les Prince is an `alternating` layout: floors are walked top-down, and the side visited first switches on each floor (south first on Floor 6) while study comes before kitchen on every side. `floorOverrides` gives Floor 1 its own study room and kitchen, and `after` holds the games and laundry rooms. |
+| Report order and wording | `src/config/buildings.ts` | `reportBlocks` sets the report lines, separate from walking order. Les Prince uses `separateItems` to print one room per line beneath each floor heading, north-first. Blocks are separated by a blank line. `REPORT_BUILDING_ORDER` sets the order of buildings within each sweep. |
+| Shift hours, phone pick-up and sweep times | [`src/config/schedules.ts`](src/config/schedules.ts) | Coverage runs 9:00 PM–8:00 AM. Weekdays default to 9 PM and 11 PM; weekends and peak days also include 1 AM the next day. Phone pick-up stays blank. **Save times as … default** overrides these for that shift type on this device. |
 | Report headings | [`src/config/reportTemplate.ts`](src/config/reportTemplate.ts) | `SWEEPS:`, `NOTES:`, `Start time:` and so on. These can also be overridden from **Report → Report template**, and overrides are saved on that device. |
 | Note types and status wording | [`src/config/noteKinds.ts`](src/config/noteKinds.ts) | `report` is the phrase used in the Extra Notes lines. |
 
@@ -66,6 +66,8 @@ All configuration is plain TypeScript in [`src/config/`](src/config/). After edi
 
 ## How it works
 
+- **Quick sweep.** Choose **Quick sweep** beside Start Shift for one building, a sweep date/time and optional CA names. It uses the normal walkthrough and exports only that building's section plus notes. Phone pick-up, assignments and the full shift schedule are omitted. Quick sweeps save, resume and delete like full shifts; older saves default to full coverage mode.
+- **Add a sweep.** Use **Add sweep** below the overview's sweep cards. The time defaults to now. Duplicate times are rejected; existing sweep counts, times, CAs and notes are preserved when the schedule is reordered across midnight.
 - **Counts.** Each location is in one of three states: *unanswered* (nothing saved, shown as `[not recorded]`), *answered* (a count, where 0 is a real answer), or *Not Checked* (skipped on purpose, shown as `[not checked]`). Every sweep starts empty, and counts are never copied from an earlier sweep.
 - **Per-building sweep details.** Each building in each sweep has its own start time, end time and CAs. The start time is filled in on the first answer, and the end-of-route screen offers **Record end time**. Times and CAs can be edited from the details bar at the top of the walkthrough. CAs default to the ones chosen for that building on Shift setup.
 - **Walking order vs report order.** Les Prince is walked S→N on Floor 6, then N→S on Floor 5, and so on, but always reported north-first.
@@ -82,7 +84,7 @@ src/
   domain/      pure logic: types, routes, time, shift ops, progress, report, storage
   state/       React store (autosave, session restore), theme, template overrides
   components/  UI primitives, location card, sheets, note editor
-  screens/     Welcome, ShiftSetup, Overview, Walkthrough, Notes, Report
+  screens/     Welcome, ShiftSetup, QuickSetup, Overview, Walkthrough, Notes, Report
 ```
 
 ## Known limitations
@@ -90,6 +92,6 @@ src/
 - Data lives only in the browser that recorded it. There is no sync between devices, and clearing site data deletes it. Use **Download TXT** to keep a copy of reports.
 - Having the same shift open in two tabs at once isn't coordinated. The last tab to save wins.
 - **Unconfirmed details (left configurable, not assumed):**
-  - Sweep times and phone pick-up time for each shift type. These start empty, so set them once per type and save them as the default.
+  - Phone pick-up time for each shift type stays blank until recorded or saved as a default.
   - Whether the report should list buildings in walking order instead of always Woodstock then Les Prince. Change this with `REPORT_BUILDING_ORDER`.
   - The reconstructed template writes "End Time" for Les Prince and "End time" for Woodstock. The app uses "End time" for both; change it in the report template if needed.

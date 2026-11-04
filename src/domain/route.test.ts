@@ -10,12 +10,12 @@ it('walks Woodstock in the confirmed order', () => {
     'f4-common',
     'f3-common',
     'f2-common',
-    'f1-common',
-    'north-kitchen',
     'study-101e',
     'study-101c',
     'laundry',
     'games',
+    'north-kitchen',
+    'f1-common',
   ])
   expect(getRoute('woodstock').map((r) => r.label)).toEqual([
     'Floor 6 common room',
@@ -23,12 +23,15 @@ it('walks Woodstock in the confirmed order', () => {
     'Floor 4 common room',
     'Floor 3 common room',
     'Floor 2 common room',
-    'Floor 1 common room',
-    'First-floor north kitchen',
     'Study room 101E',
     'Study room 101C',
     'Laundry room',
     'Games room',
+    'First-floor north kitchen',
+    'Floor 1 common room',
+  ])
+  expect(getRoute('woodstock').slice(5).map((r) => r.section)).toEqual([
+    'Basement', 'Basement', 'Basement', 'Basement', 'First floor', 'First floor',
   ])
 })
 

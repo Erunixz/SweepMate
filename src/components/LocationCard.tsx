@@ -75,7 +75,7 @@ export function LocationCard({
 
   return (
     <div className="flex flex-col gap-5 pb-32">
-      <div className="flex flex-col gap-2">
+      <div className="location-enter flex flex-col gap-2">
         <div className="flex items-center gap-2 text-xs text-muted">
           <span className="font-semibold">{location.section}</span>
           {location.direction && (
@@ -86,7 +86,7 @@ export function LocationCard({
           )}
           <span className="ml-auto tabular-nums">{position}</span>
         </div>
-        <h2 className="text-[28px] font-extrabold tracking-tight leading-tight">{location.label}</h2>
+        <h2 className="text-[28px] font-semibold tracking-tight leading-tight">{location.label}</h2>
         <div className="flex items-center gap-2 min-h-9">
           {entryStateBadge(entry)}
           {entry && (
@@ -98,13 +98,13 @@ export function LocationCard({
       </div>
 
       {isStatus ? (
-        <fieldset className="flex flex-col gap-2">
+        <fieldset className="location-enter flex flex-col gap-2">
           <legend className="text-sm font-semibold mb-2">Status</legend>
           {(location.statusOptions ?? []).map((opt) => (
             <label
               key={opt}
               className={cx(
-                'flex items-center gap-3 min-h-14 rounded-2xl border px-4 font-semibold cursor-pointer transition has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-accent',
+                'flex items-center gap-3 min-h-14 rounded-lg border px-4 font-semibold cursor-pointer transition has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-accent',
                 status === opt ? 'border-accent bg-accent-soft' : 'border-line bg-surface',
               )}
             >
@@ -124,7 +124,7 @@ export function LocationCard({
           ))}
         </fieldset>
       ) : (
-        <div className="rounded-3xl bg-surface border border-line/70 shadow-card p-4 flex flex-col gap-4">
+        <div className="location-enter rounded-lg bg-surface border border-line/70 p-4 flex flex-col gap-4">
           <label htmlFor={countId} className="text-xs font-bold uppercase tracking-[0.08em] text-muted text-center">
             People present
           </label>
@@ -134,7 +134,7 @@ export function LocationCard({
               onClick={() => step(-1)}
               aria-label="Decrease count"
               disabled={!countValid || parsed === 0}
-              className="size-16 rounded-full bg-surface-2 text-fg grid place-items-center transition active:scale-95 disabled:opacity-30"
+              className="size-16 rounded-full bg-surface-2 text-fg grid place-items-center transition disabled:opacity-30"
             >
               <span aria-hidden="true" className="text-3xl leading-none font-medium">−</span>
             </button>
@@ -157,13 +157,13 @@ export function LocationCard({
                   save()
                 }
               }}
-              className="h-24 w-full bg-transparent text-center text-7xl font-extrabold tracking-tight tabular-nums placeholder:text-line focus:outline-none rounded-2xl focus:bg-surface-2/60"
+              className="h-24 w-full bg-transparent text-center text-7xl font-semibold tracking-tight tabular-nums placeholder:text-line focus:outline-none rounded-lg focus:bg-surface-2/60"
             />
             <button
               type="button"
               onClick={() => step(1)}
               aria-label="Increase count"
-              className="size-16 rounded-full bg-brand text-white grid place-items-center shadow-glow transition active:scale-95"
+              className="size-16 rounded-full bg-brand text-white grid place-items-center transition"
             >
               <span aria-hidden="true" className="text-3xl leading-none font-medium">+</span>
             </button>
@@ -178,7 +178,7 @@ export function LocationCard({
                   setWarning('')
                 }}
                 className={cx(
-                  'min-h-12 rounded-xl text-base font-bold tabular-nums transition active:scale-95',
+                  'min-h-12 rounded-md text-base font-bold tabular-nums transition',
                   count === String(n) ? 'bg-fg text-bg' : 'bg-surface-2 text-fg hover:bg-line/60',
                 )}
               >
@@ -199,18 +199,18 @@ export function LocationCard({
           onChange={(e) => setObservation(e.target.value)}
           rows={2}
           placeholder="e.g. lights off, furniture moved, noise"
-          className="w-full rounded-2xl border border-line bg-surface px-3.5 py-2.5 focus:outline-none focus:ring-4 focus:ring-accent/15 focus:border-accent"
+          className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 focus:outline-none focus:ring-4 focus:ring-accent/15 focus:border-accent"
         />
       </div>
 
       {warning && (
-        <p role="alert" className="rounded-2xl bg-warn-soft text-warn px-3 py-2 text-sm font-semibold">
+        <p role="alert" className="rounded-lg bg-warn-soft text-warn px-3 py-2 text-sm font-semibold">
           {warning}
         </p>
       )}
 
       {/* Thumb-zone action bar */}
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line/60 bg-bg/85 backdrop-blur-xl">
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line/60 bg-bg">
         <div className="mx-auto max-w-2xl grid grid-cols-[3.5rem_auto_1fr] gap-2 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Button size="lg" onClick={back} disabled={!canGoBack} aria-label="Back" className="px-0">
             <Icon name="back" size={22} />

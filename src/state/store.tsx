@@ -6,6 +6,7 @@ import type { Shift } from '../domain/types'
 export type View =
   | { name: 'welcome' }
   | { name: 'setup'; mode: 'new' | 'edit' }
+  | { name: 'quick-setup'; mode: 'new' | 'edit' }
   | { name: 'overview' }
   | { name: 'walk'; sweepId: string; buildingId: string; index: number }
   | { name: 'notes' }

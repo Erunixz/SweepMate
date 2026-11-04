@@ -5,17 +5,17 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'skip'
 type Size = 'sm' | 'md' | 'lg'
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-brand text-white shadow-glow hover:brightness-110',
-  secondary: 'bg-surface text-fg border border-line shadow-card hover:bg-surface-2',
+  primary: 'bg-brand text-white hover:brightness-110',
+  secondary: 'bg-surface text-fg border border-line hover:bg-surface-2',
   ghost: 'text-fg hover:bg-surface-2',
   danger: 'bg-danger-soft text-danger hover:brightness-95',
   skip: 'bg-skip-soft text-skip hover:brightness-95',
 }
 
 const sizes: Record<Size, string> = {
-  sm: 'min-h-9 px-3 text-sm rounded-xl',
-  md: 'min-h-11 px-4 text-sm rounded-xl',
-  lg: 'min-h-14 px-5 text-base rounded-2xl',
+  sm: 'min-h-9 px-3 text-sm rounded-md',
+  md: 'min-h-11 px-4 text-sm rounded-md',
+  lg: 'min-h-14 px-5 text-base rounded-lg',
 }
 
 export function Button({
@@ -29,7 +29,7 @@ export function Button({
     <button
       type={type}
       className={cx(
-        'inline-flex items-center justify-center gap-2 font-semibold tracking-tight transition select-none active:scale-[0.98]',
+        'ui-button inline-flex items-center justify-center gap-2 font-semibold tracking-tight transition select-none',
         'disabled:opacity-40 disabled:pointer-events-none',
         variants[variant],
         sizes[size],
@@ -41,7 +41,7 @@ export function Button({
 }
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
-  return <section className={cx('rounded-3xl bg-surface border border-line/70 shadow-card p-4', className)}>{children}</section>
+  return <section className={cx('rounded-lg bg-surface border border-line/80 p-4 sm:p-5', className)}>{children}</section>
 }
 
 /** Small uppercase label above a group of content. */
@@ -72,7 +72,7 @@ export function Field({
 }
 
 const inputBase =
-  'w-full rounded-xl border border-line bg-surface-2/60 px-3 text-base text-fg placeholder:text-muted/70 transition focus:border-accent focus:bg-surface focus:outline-none focus:ring-4 focus:ring-accent/15'
+  'w-full rounded-md border border-line bg-surface-2/60 px-3 text-base text-fg placeholder:text-muted/70 transition focus:border-accent focus:bg-surface focus:outline-none focus:ring-4 focus:ring-accent/15'
 
 export function TextInput({
   label,
@@ -143,13 +143,13 @@ export function Segmented<T extends string>({
   return (
     <fieldset className="flex flex-col gap-1.5">
       <legend className="text-sm font-semibold mb-1.5">{label}</legend>
-      <div className="grid gap-1 rounded-2xl bg-surface-2 p-1" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
+      <div className="grid gap-1 rounded-lg bg-surface-2 p-1" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
         {options.map((o) => (
           <label
             key={o.value}
             className={cx(
-              'min-h-10 flex items-center justify-center rounded-xl text-sm font-semibold cursor-pointer transition has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-accent',
-              value === o.value ? 'bg-surface shadow-card text-fg' : 'text-muted hover:text-fg',
+              'min-h-10 flex items-center justify-center rounded-md text-sm font-semibold cursor-pointer transition has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-accent',
+              value === o.value ? 'bg-surface text-fg' : 'text-muted hover:text-fg',
             )}
           >
             <input type="radio" name={name} value={o.value} checked={value === o.value} onChange={() => onChange(o.value)} className="sr-only" />
@@ -176,7 +176,7 @@ export function Badge({
     skip: 'bg-skip-soft text-skip',
     accent: 'bg-accent-soft text-accent',
   }
-  return <span className={cx('inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold', tones[tone])}>{children}</span>
+  return <span className={cx('inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold', tones[tone])}>{children}</span>
 }
 
 export function ProgressBar({ value, max, label, className }: { value: number; max: number; label: string; className?: string }) {
@@ -220,7 +220,7 @@ export function ProgressRing({ value, max, size = 56, children }: { value: numbe
   )
 }
 
-/** Sticky, translucent screen header with optional back action and right-side slot. */
+/** Sticky screen header with optional back action and right-side slot. */
 export function Header({
   title,
   subtitle,
@@ -235,7 +235,7 @@ export function Header({
   right?: ReactNode
 }) {
   return (
-    <header className="sticky top-0 z-20 bg-bg/80 backdrop-blur-xl border-b border-line/60">
+    <header className="sticky top-0 z-20 bg-bg border-b border-line/60">
       <div className="mx-auto max-w-2xl flex items-center gap-2 px-3 py-2 min-h-14">
         {onBack && (
           <Button variant="ghost" onClick={onBack} aria-label={backLabel} className="px-2.5 -ml-1">
@@ -255,5 +255,5 @@ export function Header({
 }
 
 export function Page({ children, className }: { children: ReactNode; className?: string }) {
-  return <main className={cx('mx-auto max-w-2xl px-4 py-4 flex flex-col gap-4', className)}>{children}</main>
+  return <main className={cx('page-enter mx-auto w-full max-w-2xl px-4 sm:px-6 py-5 flex flex-col gap-4', className)}>{children}</main>
 }

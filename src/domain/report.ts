@@ -4,7 +4,7 @@
  */
 import { NOTE_KINDS } from '../config/noteKinds'
 import { DEFAULT_REPORT_TEMPLATE, type ReportTemplate } from '../config/reportTemplate'
-import { getRoute, reportBuildingOrder } from './route'
+import { getRoute, reportBuildingOrder, shiftBuildings } from './route'
 import { sortNotes, sweepBuildingCAs } from './shift'
 import { formatDateLong, formatTime12, joinNames } from './time'
 import type { BuildingConfig, Note, Shift, Sweep } from './types'
@@ -33,7 +33,12 @@ function buildingSection(shift: Shift, sweep: Sweep, building: BuildingConfig, t
 
   const blocks = building.reportBlocks.map((block) =>
     block
-      .map((line) => `${line.label}: ${line.items.map((item) => fill(item.text, { count: value(item.location) })).join('; ')}.`)
+      .map((line) => {
+        const items = line.items.map((item) => fill(item.text, { count: value(item.location) }))
+        return line.separateItems
+          ? `${line.label}:\n${items.map((item) => `${item}.`).join('\n')}`
+          : `${line.label}: ${items.join('; ')}.`
+      })
       .join('\n'),
   )
 
@@ -58,6 +63,7 @@ function buildingSection(shift: Shift, sweep: Sweep, building: BuildingConfig, t
 export function generateSweepSection(shift: Shift, sweepIndex: number, t: ReportTemplate = DEFAULT_REPORT_TEMPLATE): string {
   const sweep = shift.sweeps[sweepIndex]
   if (!sweep) return ''
+  if (shift.mode === 'quick') return cleanText(shiftBuildings(shift).map((b) => buildingSection(shift, sweep, b, t)).join('\n\n'))
   const heading = formatTime12(sweep.scheduledTime)
   return cleanText([heading, ...reportBuildingOrder().map((b) => buildingSection(shift, sweep, b, t))].join('\n\n'))
 }
@@ -79,16 +85,18 @@ export function generateReport(shift: Shift, t: ReportTemplate = DEFAULT_REPORT_
   const blocks: string[] = []
   if (shift.isDemo) blocks.push('[DEMO - fictional data, not a real report]')
 
-  const times = shift.sweeps.map((s) => formatTime12(s.scheduledTime))
-  blocks.push(`${t.sweepsHeading}\n${times.length ? times.join(t.sweepTimesSeparator) : t.unanswered}`)
-  blocks.push(
-    [
-      t.notesHeading,
-      fill(t.coverageDate, { date: formatDateLong(shift.date) }),
-      fill(t.phonePickup, { time: time(shift.phonePickup, t.unanswered) }),
-      fill(t.shiftStart, { time: time(shift.startTime, t.unanswered) }),
-    ].join('\n'),
-  )
+  if (shift.mode === 'full') {
+    const times = shift.sweeps.map((s) => formatTime12(s.scheduledTime))
+    blocks.push(`${t.sweepsHeading}\n${times.length ? times.join(t.sweepTimesSeparator) : t.unanswered}`)
+    blocks.push(
+      [
+        t.notesHeading,
+        fill(t.coverageDate, { date: formatDateLong(shift.date) }),
+        fill(t.phonePickup, { time: time(shift.phonePickup, t.unanswered) }),
+        fill(t.shiftStart, { time: time(shift.startTime, t.unanswered) }),
+      ].join('\n'),
+    )
+  }
   shift.sweeps.forEach((_, i) => blocks.push(generateSweepSection(shift, i, t)))
 
   const extra = [
@@ -98,7 +106,7 @@ export function generateReport(shift: Shift, t: ReportTemplate = DEFAULT_REPORT_
       .filter(Boolean),
     ...sortNotes(shift, shift.notes).map((n) => noteLine(n, t)),
   ]
-  blocks.push([t.extraNotesHeading, ...(extra.length ? extra : [t.noneLine])].join('\n'))
+  if (shift.mode === 'full' || extra.length) blocks.push([t.extraNotesHeading, ...(extra.length ? extra : [t.noneLine])].join('\n'))
 
   return cleanText(blocks.join('\n\n'))
 }
@@ -118,5 +126,5 @@ export function cleanText(s: string): string {
 }
 
 export function reportFileName(shift: Shift): string {
-  return `${shift.isDemo ? 'DEMO-' : ''}coverage-report-${shift.date}.txt`
+  return `${shift.isDemo ? 'DEMO-' : ''}${shift.mode === 'quick' ? `quick-sweep-${shift.quickBuildingId}` : 'coverage-report'}-${shift.date}.txt`
 }

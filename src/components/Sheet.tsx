@@ -43,7 +43,7 @@ export function Sheet({
       onClick={(e) => {
         if (e.target === ref.current) onClose()
       }}
-      className="m-0 mt-auto sm:m-auto w-full max-w-full sm:max-w-lg max-h-[92dvh] rounded-t-2xl sm:rounded-2xl bg-surface text-fg p-0 backdrop:bg-black/50 open:flex flex-col"
+      className="modal-sheet m-0 mt-auto sm:m-auto w-full max-w-full sm:max-w-lg max-h-[92dvh] rounded-t-lg sm:rounded-lg bg-surface text-fg p-0 backdrop:bg-black/50 open:flex flex-col"
     >
       {open && (
         <>
@@ -53,7 +53,7 @@ export function Sheet({
               ✕
             </Button>
           </div>
-          <div className="overflow-y-auto px-4 py-3 flex flex-col gap-4">{children}</div>
+          <div className="sheet-content overflow-y-auto px-4 py-3 flex flex-col gap-4">{children}</div>
           {footer && <div className="border-t border-line px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">{footer}</div>}
         </>
       )}

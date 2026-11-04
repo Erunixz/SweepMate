@@ -15,6 +15,7 @@ const LP_WINGED_FLOORS = ['6', '5', '4', '3', '2']
 /** Les Prince report lines are always north-first, regardless of walking direction. */
 const lpFloorLine = (floor: string): ReportLine => ({
   label: floor,
+  separateItems: true,
   items: [
     { location: `f${floor}-north-study`, text: '{count} in north study room' },
     { location: `f${floor}-north-kitchen`, text: '{count} in north kitchen' },
@@ -30,23 +31,24 @@ export const BUILDINGS: BuildingConfig[] = [
     layout: {
       type: 'sequence',
       stops: [
-        ...WOODSTOCK_FLOORS.map((f) => ({
+        ...WOODSTOCK_FLOORS.filter((f) => f !== '1').map((f) => ({
           section: `Floor ${f}`,
           locations: [{ id: `f${f}-common`, label: `Floor ${f} common room` }],
         })),
         {
-          section: 'First floor',
+          section: 'Basement',
           locations: [
-            { id: 'north-kitchen', label: 'First-floor north kitchen' },
             { id: 'study-101e', label: 'Study room 101E' },
             { id: 'study-101c', label: 'Study room 101C' },
+            { id: 'laundry', label: 'Laundry room' },
+            { id: 'games', label: 'Games room' },
           ],
         },
         {
-          section: 'Shared rooms',
+          section: 'First floor',
           locations: [
-            { id: 'laundry', label: 'Laundry room' },
-            { id: 'games', label: 'Games room' },
+            { id: 'north-kitchen', label: 'First-floor north kitchen' },
+            { id: 'f1-common', label: 'Floor 1 common room' },
           ],
         },
       ],
@@ -100,6 +102,7 @@ export const BUILDINGS: BuildingConfig[] = [
       [
         {
           label: '1',
+          separateItems: true,
           items: [
             { location: 'f1-study', text: '{count} in study room' },
             { location: 'f1-kitchen', text: '{count} in kitchen' },

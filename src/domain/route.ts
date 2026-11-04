@@ -1,5 +1,5 @@
 import { BUILDINGS, REPORT_BUILDING_ORDER } from '../config/buildings'
-import type { BuildingConfig, FloorLocationDef, LocationDef, RouteLocation, SequenceStop } from './types'
+import type { BuildingConfig, FloorLocationDef, LocationDef, RouteLocation, SequenceStop, Shift } from './types'
 
 function fromDef(loc: LocationDef, section: string): RouteLocation {
   return {
@@ -62,6 +62,12 @@ export function getRoute(buildingId: string): RouteLocation[] {
 export function walkingBuildingOrder(startingBuildingId: string): BuildingConfig[] {
   const start = BUILDINGS.find((b) => b.id === startingBuildingId)
   return start ? [start, ...BUILDINGS.filter((b) => b !== start)] : [...BUILDINGS]
+}
+
+/** Buildings included in this shift, in walking order. */
+export function shiftBuildings(shift: Shift): BuildingConfig[] {
+  if (shift.mode === 'quick') return BUILDINGS.filter((b) => b.id === shift.quickBuildingId)
+  return walkingBuildingOrder(shift.startingBuildingId)
 }
 
 /** Buildings in report order; any building missing from REPORT_BUILDING_ORDER is appended. */

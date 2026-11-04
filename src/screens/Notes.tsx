@@ -49,7 +49,7 @@ export function Notes() {
               aria-pressed={filter === k}
               onClick={() => setFilter(k)}
               className={cx(
-                'shrink-0 min-h-10 rounded-full px-4 text-sm font-semibold border transition',
+                'shrink-0 min-h-10 rounded-md px-4 text-sm font-semibold border transition',
                 filter === k ? 'bg-fg text-bg border-fg' : 'bg-surface text-muted border-line hover:text-fg',
               )}
             >
@@ -61,7 +61,7 @@ export function Notes() {
 
         {notes.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
-            <div aria-hidden="true" className="size-12 rounded-2xl bg-accent-soft text-accent grid place-items-center">
+            <div aria-hidden="true" className="size-12 rounded-lg bg-accent-soft text-accent grid place-items-center">
               <Icon name="notes" size={22} />
             </div>
             <p className="font-semibold">No notes yet</p>
@@ -105,7 +105,7 @@ export function Notes() {
 
       <div className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 pointer-events-none">
         <div className="mx-auto max-w-2xl px-4 flex justify-end">
-          <Button variant="primary" size="lg" className="pointer-events-auto rounded-full px-6" onClick={() => setAdding(true)}>
+          <Button variant="primary" size="lg" className="pointer-events-auto rounded-md px-6" onClick={() => setAdding(true)}>
             <Icon name="plus" />
             Add note
           </Button>

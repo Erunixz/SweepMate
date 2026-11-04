@@ -62,6 +62,8 @@ export interface ReportItem {
 export interface ReportLine {
   label: string
   items: ReportItem[]
+  /** Put each room on its own line beneath the floor heading. */
+  separateItems?: boolean
 }
 
 export interface BuildingConfig {
@@ -145,6 +147,9 @@ export interface Note {
 
 export interface Shift {
   id: string
+  mode: 'full' | 'quick'
+  /** The only building included in quick mode; null for full coverage. */
+  quickBuildingId: string | null
   isDemo: boolean
   /** Coverage date (YYYY-MM-DD) — the date the shift starts on. */
   date: string

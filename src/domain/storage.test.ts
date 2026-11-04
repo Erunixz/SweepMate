@@ -1,6 +1,6 @@
 import { createDemoShift } from './demo'
 import { getRoute } from './route'
-import { createNote, setEntry, updateBuildingSweep, updateSweep, upsertNote } from './shift'
+import { createNote, setEntry, updateBuildingSweep, upsertNote } from './shift'
 import { BACKUP_PREFIX, DEMO_KEY, SHIFTS_KEY, loadAll, saveDemo, saveShifts } from './storage'
 import { testShift } from './testShift'
 
@@ -16,12 +16,11 @@ function memoryStorage() {
 
 function fullShift() {
   let s = testShift({ type: 'peak', startingBuildingId: 'lp', sweepTimes: ['21:00', '01:00'] })
-  const [a, b] = s.sweeps
+  const [a] = s.sweeps
   const loc = getRoute('lp')[0]!.id
   s = setEntry(s, a!.id, 'lp', loc, { state: 'answered', count: 0, observation: 'quiet', updatedAt: 'x' })
   s = setEntry(s, a!.id, 'woodstock', 'games', { state: 'skipped', observation: '', updatedAt: 'x' })
   s = updateBuildingSweep(s, a!.id, 'lp', (bs) => ({ ...bs, actualStart: '21:01', actualEnd: '21:40', cas: ['Jacob'] }))
-  s = updateSweep(s, b!.id, { missed: true, missedReason: 'call' })
   s = upsertNote(s, createNote('ir', { time: '23:00', description: 'x', reference: '42', status: 'filed' }))
   return { ...s, extraNotes: 'extra', reportDraft: 'edited text' }
 }
@@ -43,7 +42,7 @@ it('migrates shifts saved in the earlier format', () => {
   st.setItem(SHIFTS_KEY, JSON.stringify({ version: 1, shifts: [old] }))
   const { shifts, problem } = loadAll(st)
   expect(problem).toBeNull()
-  expect(shifts[0]).toMatchObject({ myName: 'Erfan', otherCAs: ['Jacob', 'Sam'], buildingCAs: {}, phonePickup: '', extraNotes: '' })
+  expect(shifts[0]).toMatchObject({ mode: 'full', quickBuildingId: null, myName: 'Erfan', otherCAs: ['Jacob', 'Sam'], buildingCAs: {}, phonePickup: '', extraNotes: '' })
   expect(shifts[0]!.sweeps[0]!.buildings.woodstock).toEqual({ entries: {}, actualStart: '', actualEnd: '', cas: null })
 })
 

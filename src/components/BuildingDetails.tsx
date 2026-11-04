@@ -22,7 +22,7 @@ export function BuildingDetails({ shift, sweep, buildingId }: { shift: Shift; sw
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-2xl border border-line/70 bg-surface shadow-card px-3.5 py-2.5 min-h-12 text-left text-xs transition hover:border-accent/50"
+        className="flex items-center gap-2 rounded-lg border border-line/70 bg-surface px-3.5 py-2.5 min-h-12 text-left text-xs transition hover:border-accent/50"
       >
         <span className="flex-1 min-w-0">
           <span className="block">

@@ -3,9 +3,10 @@ import { Icon } from '../components/Icon'
 import { LoadProblemBanner } from '../components/LoadProblemBanner'
 import { ConfirmSheet } from '../components/Sheet'
 import { ThemeToggle } from '../components/ThemeToggle'
-import { Badge, Button, Eyebrow, Page, ProgressRing } from '../components/ui'
+import { Badge, Button, Eyebrow, Page } from '../components/ui'
 import { SHIFT_TYPE_LABELS } from '../config/schedules'
 import { sweepProgress } from '../domain/progress'
+import { getBuilding } from '../domain/route'
 import { caPool } from '../domain/shift'
 import { formatDateShort } from '../domain/time'
 import type { Shift } from '../domain/types'
@@ -16,7 +17,7 @@ function sweepsDone(shift: Shift) {
 }
 
 function shiftSummary(shift: Shift) {
-  return `${SHIFT_TYPE_LABELS[shift.type]} · ${caPool(shift).join(', ') || 'No CA names'}`
+  return `${shift.mode === 'quick' ? getBuilding(shift.quickBuildingId!)?.name : SHIFT_TYPE_LABELS[shift.type]} · ${caPool(shift).join(', ') || 'No CA names'}`
 }
 
 export function Welcome() {
@@ -28,52 +29,55 @@ export function Welcome() {
 
   return (
     <Page className="min-h-dvh py-6 gap-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div aria-hidden="true" className="size-8 rounded-xl bg-brand grid place-items-center text-white">
-            <Icon name="sweeps" size={18} />
-          </div>
-          <span className="font-bold tracking-tight">SweepMate</span>
-        </div>
+      <div className="flex items-center justify-between border-b border-line pb-4">
+        <span className="text-sm font-semibold tracking-wide">SweepMate</span>
         <ThemeToggle />
       </div>
 
       <LoadProblemBanner />
 
-      <h1 className="text-2xl font-bold tracking-tight pt-2">Shifts</h1>
+      <div className="pt-3 pb-6 border-b border-line">
+        <h1 className="residence-title text-5xl sm:text-6xl text-accent">Princestock</h1>
+        <p className="mt-3 text-sm text-muted">Woodstock &amp; Les Prince</p>
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-xl font-semibold">Shifts</h2>
+        {unfinished.length > 0 && <Badge tone="accent">{unfinished.length} active</Badge>}
+      </div>
 
       {latest && (
         <button
           type="button"
           onClick={() => openShift(latest)}
           aria-label={`Resume Shift – ${formatDateShort(latest.date)}`}
-          className="group flex items-center gap-4 rounded-3xl bg-surface border border-line/70 shadow-card p-4 text-left transition hover:border-accent/50 active:scale-[0.99]"
+          className="flex items-center gap-4 rounded-lg bg-surface border border-line border-l-4 border-l-accent p-4 text-left transition hover:bg-surface-2"
         >
-          <ProgressRing value={sweepsDone(latest)} max={latest.sweeps.length || 1}>
-            {sweepsDone(latest)}/{latest.sweeps.length}
-          </ProgressRing>
           <span className="flex-1 min-w-0">
-            <Eyebrow className="text-accent">In progress</Eyebrow>
+            <span className="flex items-center gap-2 text-xs font-semibold text-accent">Continue shift {latest.mode === 'quick' && <Badge tone="accent">Quick</Badge>}</span>
             <span className="block text-lg font-bold tracking-tight">{formatDateShort(latest.date)}</span>
             <span className="block text-sm text-muted truncate">{shiftSummary(latest)}</span>
+            <span className="block text-xs text-muted mt-2">{sweepsDone(latest)} of {latest.sweeps.length} sweeps complete</span>
           </span>
-          <span className="size-10 rounded-full bg-accent-soft text-accent grid place-items-center transition group-hover:translate-x-0.5">
-            <Icon name="chevron" />
-          </span>
+          <Icon name="chevron" className="text-muted" />
         </button>
       )}
 
-      <Button variant={latest ? 'secondary' : 'primary'} size="lg" onClick={() => navigate({ name: 'setup', mode: 'new' })}>
-        <Icon name="plus" />
-        Start Shift
-      </Button>
+      <div className="grid grid-cols-2 gap-3">
+        <Button variant="primary" size="lg" className="px-3" onClick={() => navigate({ name: 'setup', mode: 'new' })}>
+          <Icon name="plus" />
+          Start Shift
+        </Button>
+        <Button size="lg" className="px-3" onClick={() => navigate({ name: 'quick-setup', mode: 'new' })}>
+          <Icon name="play" size={16} /> Quick sweep
+        </Button>
+      </div>
 
       {unfinished.length > 1 && <ShiftList title="Other unfinished shifts" shifts={unfinished.slice(1)} onDelete={setToDelete} />}
       {finished.length > 0 && <ShiftList title="Past shifts" shifts={finished} onDelete={setToDelete} />}
 
-      <div className="mt-auto flex flex-col items-center gap-1 text-center pt-4">
+      <div className="mt-auto flex flex-col items-start gap-1 border-t border-line pt-4">
         <Button variant="ghost" size="sm" onClick={startDemo}>
-          <Icon name="sparkle" size={16} />
           {demo ? 'Open demo shift' : 'Try a demo shift'}
         </Button>
         <p className="text-xs text-muted">Fictional data, kept separate from real shifts.</p>
@@ -108,12 +112,12 @@ function ShiftList({ title, shifts, onDelete }: { title: string; shifts: Shift[]
   return (
     <section className="flex flex-col gap-2">
       <Eyebrow className="px-1">{title}</Eyebrow>
-      <ul className="rounded-3xl bg-surface border border-line/70 shadow-card divide-y divide-line/70 overflow-hidden">
+      <ul className="rounded-lg bg-surface border border-line/70 divide-y divide-line/70 overflow-hidden">
         {shifts.map((s) => (
           <li key={s.id} className="flex items-center gap-1 pr-2">
             <button type="button" onClick={() => openShift(s)} className="flex-1 min-w-0 text-left min-h-14 px-4 py-2.5 hover:bg-surface-2">
               <span className="flex items-center gap-2 font-semibold">
-                {formatDateShort(s.date)} {s.finished && <Badge tone="ok">Finished</Badge>}
+                {formatDateShort(s.date)} {s.mode === 'quick' && <Badge tone="accent">Quick</Badge>} {s.finished && <Badge tone="ok">Finished</Badge>}
               </span>
               <span className="block text-xs text-muted truncate">
                 {shiftSummary(s)} · {sweepsDone(s)}/{s.sweeps.length} sweeps

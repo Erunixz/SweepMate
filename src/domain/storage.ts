@@ -3,6 +3,7 @@
  * data can never mix with real records. Damaged data is backed up, never silently discarded.
  */
 import { DEFAULT_SCHEDULES } from '../config/schedules'
+import { getBuilding } from './route'
 import type { Note, Shift, Sweep } from './types'
 
 export const SHIFTS_KEY = 'sweepmate:v1:shifts'
@@ -92,6 +93,9 @@ function normalizeNote(v: unknown): Note | null {
 export function normalizeShift(v: unknown): Shift | null {
   if (!isObj(v) || !isStr(v.id) || !isStr(v.date) || !isStr(v.startTime) || !Array.isArray(v.sweeps)) return null
   const type = isStr(v.type) && v.type in DEFAULT_SCHEDULES ? (v.type as Shift['type']) : 'weekday'
+  const mode = v.mode === 'quick' ? 'quick' : 'full'
+  const quickBuildingId = mode === 'quick' && isStr(v.quickBuildingId) ? v.quickBuildingId : null
+  if (mode === 'quick' && (!quickBuildingId || !getBuilding(quickBuildingId) || v.sweeps.length !== 1)) return null
   const sweeps = v.sweeps.map(normalizeSweep)
   if (sweeps.some((s) => s === null)) return null
   const notes = Array.isArray(v.notes) ? v.notes.map(normalizeNote).filter((n): n is Note => n !== null) : []
@@ -103,6 +107,8 @@ export function normalizeShift(v: unknown): Shift | null {
   return {
     id: v.id,
     isDemo: v.isDemo === true,
+    mode,
+    quickBuildingId,
     date: v.date,
     type,
     phonePickup: isStr(v.phonePickup) ? v.phonePickup : '',

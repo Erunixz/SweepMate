@@ -62,8 +62,6 @@ function normalizeSweep(v: unknown): Sweep | null {
   return {
     id: v.id,
     scheduledTime: v.scheduledTime,
-    missed: v.missed === true,
-    missedReason: isStr(v.missedReason) ? v.missedReason : '',
     buildings,
   }
 }

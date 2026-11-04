@@ -63,7 +63,6 @@ export function missingDetails(shift: Shift): string[] {
   if (!shift.phonePickup) out.push('Coverage phone pick-up time')
   if (shift.sweeps.length === 0) out.push('Scheduled sweep times')
   shift.sweeps.forEach((sweep) => {
-    if (sweep.missed) return
     for (const b of walkingBuildingOrder(shift.startingBuildingId)) {
       const bs = sweep.buildings[b.id]
       const label = `${formatTime12(sweep.scheduledTime)} ${b.name}`
@@ -76,13 +75,12 @@ export function missingDetails(shift: Shift): string[] {
 }
 
 /**
- * Unanswered locations across the shift, for sweeps not marked as missed.
+ * Unanswered locations across the shift.
  * Explicitly skipped (Not Checked) locations are *not* missing.
  */
 export function missingEntries(shift: Shift): MissingGroup[] {
   const groups: MissingGroup[] = []
   shift.sweeps.forEach((sweep, i) => {
-    if (sweep.missed) return
     for (const b of walkingBuildingOrder(shift.startingBuildingId)) {
       const entries = sweep.buildings[b.id]?.entries ?? {}
       const locations = getRoute(b.id).filter((loc) => !entries[loc.id])

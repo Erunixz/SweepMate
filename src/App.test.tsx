@@ -7,19 +7,29 @@ beforeEach(() => {
   sessionStorage.clear()
 })
 
+const next = () => fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+const addSweep = () => fireEvent.click(screen.getByRole('button', { name: 'Add sweep' }))
+
 function startShift() {
   const r = render(<App />)
   fireEvent.click(screen.getByRole('button', { name: 'Start Shift' }))
+  next()
   fireEvent.change(screen.getByLabelText('My name'), { target: { value: 'Erfan' } })
-  fireEvent.click(screen.getByRole('button', { name: '+ Add sweep' }))
+  fireEvent.change(screen.getByLabelText('Other CAs on coverage 1'), { target: { value: 'Jacob' } })
+  next()
+  addSweep()
   fireEvent.click(screen.getByRole('button', { name: 'Start shift' }))
   return r
 }
 
-it('starts setup with no pre-filled name, no invented sweep times, and the confirmed 9 PM–8 AM hours', () => {
+it('walks setup in three steps with no pre-filled name, no invented sweep times, and the confirmed 9 PM–8 AM hours', () => {
   render(<App />)
   fireEvent.click(screen.getByRole('button', { name: 'Start Shift' }))
+  expect(screen.getByRole('heading', { name: 'Which shift?' })).toBeInTheDocument()
+  next()
+  expect(screen.getByRole('heading', { name: "Who's on coverage?" })).toBeInTheDocument()
   expect(screen.getByLabelText('My name')).toHaveValue('')
+  next()
   expect(screen.getByLabelText('Shift start')).toHaveValue('21:00')
   expect(screen.getByLabelText('Shift end')).toHaveValue('08:00')
   expect(screen.getByLabelText('Coverage phone pick-up')).toHaveValue('')
@@ -28,20 +38,52 @@ it('starts setup with no pre-filled name, no invented sweep times, and the confi
   expect(screen.getByRole('alert')).toHaveTextContent(/at least one scheduled sweep/i)
 })
 
+it('shows the CA names on the overview and uses everyone for both buildings by default', () => {
+  startShift()
+  expect(screen.getByRole('button', { name: /CAs on coverage: Erfan, Jacob/ })).toBeInTheDocument()
+  const saved = JSON.parse(localStorage.getItem(SHIFTS_KEY)!).shifts[0]
+  expect(saved.buildingCAs).toEqual({ woodstock: ['Erfan', 'Jacob'], lp: ['Erfan', 'Jacob'] })
+})
+
+it('lets you choose who sweeps each building', () => {
+  render(<App />)
+  fireEvent.click(screen.getByRole('button', { name: 'Start Shift' }))
+  next()
+  fireEvent.change(screen.getByLabelText('My name'), { target: { value: 'Erfan' } })
+  fireEvent.change(screen.getByLabelText('Other CAs on coverage 1'), { target: { value: 'Jacob' } })
+  const lp = screen.getByRole('group', { name: 'Sweeping Les Prince' })
+  fireEvent.click(within(lp).getByRole('button', { name: /Erfan/ }))
+  next()
+  addSweep()
+  fireEvent.click(screen.getByRole('button', { name: 'Start shift' }))
+  const saved = JSON.parse(localStorage.getItem(SHIFTS_KEY)!).shifts[0]
+  expect(saved.buildingCAs).toEqual({ woodstock: ['Erfan', 'Jacob'], lp: ['Jacob'] })
+})
+
 it('saves a schedule as the default for its shift type', () => {
   render(<App />)
   fireEvent.click(screen.getByRole('button', { name: 'Start Shift' }))
   fireEvent.click(screen.getByRole('radio', { name: 'Peak day' }))
+  next()
+  next()
   fireEvent.change(screen.getByLabelText('Coverage phone pick-up'), { target: { value: '20:50' } })
   for (const t of ['21:00', '23:00', '01:00']) {
-    fireEvent.click(screen.getByRole('button', { name: '+ Add sweep' }))
+    addSweep()
     const inputs = screen.getAllByLabelText(/^Sweep \d$/)
     fireEvent.change(inputs.at(-1)!, { target: { value: t } })
   }
   fireEvent.click(screen.getByRole('button', { name: /Save times as Peak day default/ }))
+
+  fireEvent.click(screen.getByRole('button', { name: /1\. Shift/ }))
   fireEvent.click(screen.getByRole('radio', { name: 'Weekday' }))
+  next()
+  next()
   expect(screen.queryAllByLabelText(/^Sweep \d$/)).toHaveLength(0)
+
+  fireEvent.click(screen.getByRole('button', { name: /1\. Shift/ }))
   fireEvent.click(screen.getByRole('radio', { name: 'Peak day' }))
+  next()
+  next()
   expect(screen.getAllByLabelText(/^Sweep \d$/).map((i) => (i as HTMLInputElement).value)).toEqual(['21:00', '23:00', '01:00'])
   expect(screen.getByLabelText('Coverage phone pick-up')).toHaveValue('20:50')
 })
@@ -80,7 +122,7 @@ it('requires confirmation before deleting a shift', () => {
 it('opens the demo without adding it to real shifts', () => {
   render(<App />)
   fireEvent.click(screen.getByRole('button', { name: /Try a demo shift/ }))
-  expect(screen.getByText(/Demo shift – fictional data/)).toBeInTheDocument()
+  expect(screen.getByText(/Demo · fictional data/)).toBeInTheDocument()
   expect(localStorage.getItem(SHIFTS_KEY)).toBeNull()
 })
 

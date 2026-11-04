@@ -21,7 +21,7 @@ export interface NewShiftInput extends ShiftDetails {
 }
 
 export function createSweep(scheduledTime: string): Sweep {
-  return { id: newId(), scheduledTime, missed: false, missedReason: '', buildings: {} }
+  return { id: newId(), scheduledTime, buildings: {} }
 }
 
 export function emptyBuildingSweep(): BuildingSweep {
@@ -96,10 +96,6 @@ export function applySchedule(shift: Shift, rows: { id?: string; time: string }[
   // Notes tied to a removed sweep become shift-level notes rather than disappearing.
   const notes = shift.notes.map((n) => (n.sweepId && !kept.has(n.sweepId) ? { ...n, sweepId: null } : n))
   return touch({ ...shift, sweeps, notes })
-}
-
-export function updateSweep(shift: Shift, sweepId: string, patch: Partial<Pick<Sweep, 'missed' | 'missedReason'>>): Shift {
-  return touch({ ...shift, sweeps: shift.sweeps.map((s) => (s.id === sweepId ? { ...s, ...patch } : s)) })
 }
 
 export function updateBuildingSweep(

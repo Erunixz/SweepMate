@@ -114,8 +114,6 @@ export interface Sweep {
   id: string
   /** Scheduled time, HH:MM (24h). Times earlier than the shift start fall on the next day. */
   scheduledTime: string
-  missed: boolean
-  missedReason: string
   buildings: Record<string, BuildingSweep>
 }
 

@@ -94,12 +94,6 @@ body {
 .bg-brand {
   background-image: linear-gradient(135deg, #4f46e5, #7c3aed);
 }
-.text-brand {
-  background-image: linear-gradient(135deg, var(--accent), var(--accent-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
 
 :focus-visible {
   outline: 3px solid var(--accent);

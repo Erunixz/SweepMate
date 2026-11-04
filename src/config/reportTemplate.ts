@@ -19,8 +19,6 @@ export interface ReportTemplate {
   buildingCAs: string
   /** {time} */
   buildingEnd: string
-  /** {reason} */
-  missedSweep: string
   extraNotesHeading: string
   /** Parts are joined with this between time, location and text. */
   noteSeparator: string
@@ -39,7 +37,6 @@ export const DEFAULT_REPORT_TEMPLATE: ReportTemplate = {
   buildingStart: 'Start time: {time}',
   buildingCAs: 'CAs: {names}',
   buildingEnd: 'End time: {time}',
-  missedSweep: 'Sweep not completed: {reason}.',
   extraNotesHeading: 'Extra Notes:',
   noteSeparator: ' — ',
   unanswered: '[not recorded]',
@@ -58,7 +55,6 @@ export const TEMPLATE_FIELD_HELP: Record<keyof ReportTemplate, string> = {
   buildingStart: 'Building sweep start. Token: {time}',
   buildingCAs: 'CAs on a building sweep. Token: {names}',
   buildingEnd: 'Building sweep end. Token: {time}',
-  missedSweep: 'Shown under a sweep marked missed. Token: {reason}',
   extraNotesHeading: 'Heading above extra notes',
   noteSeparator: 'Between time, location and text in a note line',
   unanswered: 'Shown for anything not recorded',

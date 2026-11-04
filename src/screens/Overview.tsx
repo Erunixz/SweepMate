@@ -18,7 +18,6 @@ import { useActiveShift } from '../state/store'
 /** The next building to walk: the first unfinished building of the first unfinished sweep. */
 function nextUp(shift: Shift) {
   for (const sweep of shift.sweeps) {
-    if (sweep.missed) continue
     for (const b of walkingBuildingOrder(shift.startingBuildingId)) {
       if (!isDone(buildingProgress(sweep, b.id))) return { sweep, buildingId: b.id }
     }
@@ -30,6 +29,7 @@ export function Overview() {
   const { shift, navigate, updateActive } = useActiveShift()
   const openFollowUps = shift.notes.filter((n) => n.kind === 'follow-up' && n.status === 'open').length
   const names = caPool(shift)
+  const current = nextUp(shift)?.sweep.id
 
   return (
     <>
@@ -38,7 +38,6 @@ export function Overview() {
         subtitle={
           <>
             {SHIFT_TYPE_LABELS[shift.type]} · {formatTime12(shift.startTime)}–{formatTime12(shift.endTime)}
-            {names.length > 0 && ` · ${names.join(', ')}`}
           </>
         }
         onBack={() => navigate({ name: 'welcome' })}
@@ -54,12 +53,12 @@ export function Overview() {
       />
       <Page className="pb-28">
         {shift.isDemo && (
-          <p className="rounded-2xl bg-warn-soft text-warn px-4 py-3 text-sm font-semibold">
-            Demo shift – fictional data. It's kept separate from your real shifts.
-          </p>
+          <p className="self-start rounded-full bg-warn-soft text-warn px-3 py-1 text-xs font-semibold">Demo · fictional data</p>
         )}
 
         <UpNext shift={shift} />
+
+        <TeamRow names={names} onEdit={() => navigate({ name: 'setup', mode: 'edit' })} />
 
         {shift.sweeps.length === 0 && (
           <Card>
@@ -74,7 +73,7 @@ export function Overview() {
 
         {shift.sweeps.length > 0 && <Eyebrow className="px-1 pt-2">Sweeps</Eyebrow>}
         {shift.sweeps.map((sweep, i) => (
-          <SweepCard key={sweep.id} shift={shift} sweep={sweep} number={i + 1} />
+          <SweepCard key={sweep.id} shift={shift} sweep={sweep} number={i + 1} defaultOpen={sweep.id === current} />
         ))}
 
         <ReportExport shift={shift} />
@@ -200,15 +199,52 @@ function ReportExport({ shift }: { shift: Shift }) {
   )
 }
 
-function SweepCard({ shift, sweep, number }: { shift: Shift; sweep: Sweep; number: number }) {
-  const { navigate, updateActive } = useActiveShift()
-  const [showMissed, setShowMissed] = useState(sweep.missed)
-  const total = sweepProgress(shift, sweep)
-  const patch = (p: Partial<Pick<Sweep, 'missed' | 'missedReason'>>) => updateActive((s) => updateSweep(s, sweep.id, p))
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .map((w) => w.charAt(0))
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
 
-  const status = sweep.missed ? (
-    <Badge tone="danger">Missed</Badge>
-  ) : isDone(total) ? (
+/** Everyone on coverage, always visible on the overview. */
+function TeamRow({ names, onEdit }: { names: string[]; onEdit: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onEdit}
+      aria-label={names.length ? `CAs on coverage: ${names.join(', ')}. Edit` : 'Add CA names'}
+      className="flex items-center gap-3 rounded-2xl bg-surface border border-line/70 shadow-card px-4 py-3 text-left min-h-14 hover:border-accent/50 transition"
+    >
+      <span className="flex -space-x-2" aria-hidden="true">
+        {names.slice(0, 4).map((n) => (
+          <span key={n} className="size-8 rounded-full bg-accent-soft text-accent border-2 border-surface grid place-items-center text-xs font-bold">
+            {initials(n)}
+          </span>
+        ))}
+        {names.length === 0 && (
+          <span className="size-8 rounded-full bg-surface-2 text-muted grid place-items-center">
+            <Icon name="users" size={16} />
+          </span>
+        )}
+      </span>
+      <span className="flex-1 min-w-0">
+        <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-muted">On coverage</span>
+        <span className={cx('block text-sm font-semibold truncate', !names.length && 'text-warn')}>
+          {names.length ? names.join(', ') : 'Add CA names'}
+        </span>
+      </span>
+      <Icon name="edit" size={16} className="text-muted" />
+    </button>
+  )
+}
+
+function SweepCard({ shift, sweep, number, defaultOpen }: { shift: Shift; sweep: Sweep; number: number; defaultOpen: boolean }) {
+  const { navigate } = useActiveShift()
+  const [open, setOpen] = useState(defaultOpen)
+  const total = sweepProgress(shift, sweep)
+
+  const status = isDone(total) ? (
     <Badge tone="ok">
       <Icon name="check" size={12} /> Done
     </Badge>
@@ -219,16 +255,24 @@ function SweepCard({ shift, sweep, number }: { shift: Shift; sweep: Sweep; numbe
   )
 
   return (
-    <Card className={cx('flex flex-col gap-3', sweep.missed && 'opacity-80')}>
-      <div className="flex items-center gap-3">
-        <div className="flex-1">
-          <h3 className="text-xl font-extrabold tracking-tight tabular-nums">{labelShiftTime(shift.startTime, sweep.scheduledTime)}</h3>
-          <p className="text-xs text-muted">Sweep {number}</p>
-        </div>
+    <Card className="flex flex-col gap-3 py-3">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex items-center gap-3 text-left min-h-11 -mx-1 px-1 rounded-xl"
+      >
+        <span className="flex-1">
+          <span className="block text-xl font-extrabold tracking-tight tabular-nums">{labelShiftTime(shift.startTime, sweep.scheduledTime)}</span>
+          <span className="block text-xs text-muted">
+            Sweep {number} · {total.answered + total.skipped}/{total.total}
+          </span>
+        </span>
         {status}
-      </div>
+        <Icon name="chevron" className={cx('text-muted transition-transform', open && 'rotate-90')} />
+      </button>
 
-      {!sweep.missed && (
+      {open && (
         <ul className="flex flex-col gap-1.5">
           {walkingBuildingOrder(shift.startingBuildingId).map((b) => {
             const p = buildingProgress(sweep, b.id)
@@ -274,39 +318,6 @@ function SweepCard({ shift, sweep, number }: { shift: Shift; sweep: Sweep; numbe
         </ul>
       )}
 
-      {showMissed ? (
-        <div className="flex flex-col gap-2 rounded-2xl bg-danger-soft/60 p-3">
-          <TextInput
-            label="Reason sweep was missed"
-            value={sweep.missedReason}
-            placeholder="e.g. responding to an incident"
-            onChange={(e) => patch({ missedReason: e.target.value, missed: true })}
-          />
-          <Button
-            onClick={() => {
-              patch({ missed: false, missedReason: '' })
-              setShowMissed(false)
-            }}
-          >
-            {sweep.missed ? 'Undo – sweep was not missed' : 'Cancel'}
-          </Button>
-          {sweep.missed && hasStarted(total) && (
-            <p className="text-xs">Counts already recorded for this sweep are kept but left out of the report while it's marked missed.</p>
-          )}
-        </div>
-      ) : (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="self-start text-muted -ml-2"
-          onClick={() => {
-            setShowMissed(true)
-            patch({ missed: true })
-          }}
-        >
-          Mark as missed…
-        </Button>
-      )}
     </Card>
   )
 }

@@ -59,9 +59,6 @@ export function generateSweepSection(shift: Shift, sweepIndex: number, t: Report
   const sweep = shift.sweeps[sweepIndex]
   if (!sweep) return ''
   const heading = formatTime12(sweep.scheduledTime)
-  if (sweep.missed) {
-    return cleanText(`${heading}\n\n${fill(t.missedSweep, { reason: stripEndPunct(oneLine(sweep.missedReason)) || 'reason not recorded' })}`)
-  }
   return cleanText([heading, ...reportBuildingOrder().map((b) => buildingSection(shift, sweep, b, t))].join('\n\n'))
 }
 

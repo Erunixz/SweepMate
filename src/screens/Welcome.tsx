@@ -12,7 +12,7 @@ import type { Shift } from '../domain/types'
 import { useStore } from '../state/store'
 
 function sweepsDone(shift: Shift) {
-  return shift.sweeps.filter((s) => s.missed || sweepProgress(shift, s).unanswered === 0).length
+  return shift.sweeps.filter((s) => sweepProgress(shift, s).unanswered === 0).length
 }
 
 function shiftSummary(shift: Shift) {
@@ -40,14 +40,7 @@ export function Welcome() {
 
       <LoadProblemBanner />
 
-      <section className="pt-6 pb-2 flex flex-col gap-3">
-        <h1 className="text-4xl font-extrabold tracking-tight leading-[1.05]">
-          Sweeps done.
-          <br />
-          <span className="text-brand">Report ready.</span>
-        </h1>
-        <p className="text-muted text-base max-w-sm">Walk the route, tap the counts, and paste a finished coverage report at the end of the night.</p>
-      </section>
+      <h1 className="text-2xl font-bold tracking-tight pt-2">Shifts</h1>
 
       {latest && (
         <button

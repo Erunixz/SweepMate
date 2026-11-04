@@ -1,6 +1,6 @@
 /** Fictional demo shift. Marked isDemo and stored separately from real shifts. */
 import { getRoute } from './route'
-import { createNote, createShift, setEntry, updateBuildingSweep, updateSweep, upsertNote } from './shift'
+import { createNote, createShift, setEntry, updateBuildingSweep, upsertNote } from './shift'
 import { suggestedShiftDate } from './time'
 import type { Shift } from './types'
 
@@ -18,7 +18,7 @@ export function createDemoShift(): Shift {
     sweepTimes: ['21:00', '23:00', '01:00'],
     isDemo: true,
   })
-  const [first, second, third] = s.sweeps
+  const [first, second] = s.sweeps
   const ts = new Date().toISOString()
 
   // Sweep 1: both buildings done, with zeros, one Not Checked and an observation.
@@ -44,8 +44,6 @@ export function createDemoShift(): Shift {
     })
   s = updateBuildingSweep(s, second!.id, 'woodstock', (bs) => ({ ...bs, actualStart: '23:03' }))
 
-  // Sweep 3: missed.
-  s = updateSweep(s, third!.id, { missed: true, missedReason: 'Demo: responding to a lockout' })
 
   s = upsertNote(
     s,

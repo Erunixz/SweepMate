@@ -16,4 +16,9 @@ export default tseslint.config(
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },
   },
+  {
+    // Context modules export a provider alongside its hook by design.
+    files: ['src/state/**/*.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 )

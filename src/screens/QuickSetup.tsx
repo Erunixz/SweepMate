@@ -47,7 +47,8 @@ export function QuickSetup({ mode }: { mode: 'new' | 'edit' }) {
         <form className="flex flex-col gap-5" noValidate onSubmit={submit}>
           {editing ? <p className="font-semibold">{BUILDINGS.find((b) => b.id === buildingId)?.name}</p> :
             <Segmented label="Building" value={buildingId} onChange={setBuildingId} options={BUILDINGS.map((b) => ({ value: b.id, label: b.name }))} />}
-          <div className="grid grid-cols-2 gap-3">
+          {/* minmax(0,1fr): native date/time inputs must not widen their column past half. */}
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
             <TextInput label="Sweep date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             <TextInput label="Sweep time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
           </div>

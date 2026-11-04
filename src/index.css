@@ -108,19 +108,23 @@ button:not(:disabled), summary { cursor: pointer; }
 input, select, textarea { min-width: 0; }
 
 /*
- * iOS Safari draws time inputs natively: it centres the value, ignores the box width (so the
- * field can overflow its row) and collapses an empty field to almost no height. Dropping the
- * native appearance makes it size like any other input; tapping still opens the iOS picker.
- * Scoped to iOS so desktop and Android keep their native clock button.
+ * iOS Safari draws date and time inputs natively: it centres the value, ignores the box width
+ * (so the field overflows into its neighbour) and collapses an empty field to almost no height.
+ * Dropping the native appearance makes them size like any other input; tapping still opens
+ * the iOS picker. Scoped to iOS so desktop and Android keep their native picker buttons.
  */
 @supports (-webkit-touch-callout: none) {
-  input[type='time'] {
+  input[type='time'],
+  input[type='date'] {
     -webkit-appearance: none;
     appearance: none;
     display: block;
+    width: 100%;
+    max-width: 100%;
   }
 }
-input[type='time']::-webkit-date-and-time-value {
+input[type='time']::-webkit-date-and-time-value,
+input[type='date']::-webkit-date-and-time-value {
   text-align: left;
   min-height: 1.5em;
 }

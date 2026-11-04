@@ -230,7 +230,7 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
                 onChange={(e) => setPhonePickup(e.target.value)}
                 hint="Leave blank if not recorded yet."
               />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
                 <TextInput label="Shift start" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
                 <TextInput
                   label="Shift end"

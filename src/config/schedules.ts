@@ -1,31 +1,28 @@
 import type { ShiftType } from '../domain/types'
 
-export interface ShiftTemplate {
-  label: string
+export interface ShiftSchedule {
   start: string
   end: string
-  /** Default sweep times (24h HH:MM). Editable per shift during setup. */
+  /** Coverage phone pick-up time, or '' for none. */
+  phonePickup: string
+  /** Scheduled sweep times (24h HH:MM). */
   sweepTimes: string[]
 }
 
-/**
- * Default shift hours and sweep times per shift type.
- * ⚠ PLACEHOLDER TIMES — replace with the schedule from the specification.
- * Times earlier than the shift start are treated as after midnight.
- */
-export const SHIFT_TEMPLATES: Record<ShiftType, ShiftTemplate> = {
-  weekday: { label: 'Weekday', start: '19:00', end: '03:00', sweepTimes: ['20:00', '22:00', '00:00', '02:00'] },
-  weekend: { label: 'Weekend', start: '20:00', end: '04:00', sweepTimes: ['21:00', '23:00', '01:00', '03:00'] },
-  peak: {
-    label: 'Peak',
-    start: '19:00',
-    end: '04:00',
-    sweepTimes: ['20:00', '21:30', '23:00', '00:30', '02:00', '03:30'],
-  },
+export const SHIFT_TYPE_LABELS: Record<ShiftType, string> = {
+  weekday: 'Weekday',
+  weekend: 'Weekend',
+  peak: 'Peak day',
 }
 
-/** Suggest a shift type from the start date: Friday and Saturday nights are weekend shifts. */
-export function suggestShiftType(date: Date): ShiftType {
-  const day = date.getDay()
-  return day === 5 || day === 6 ? 'weekend' : 'weekday'
+/**
+ * Built-in starting schedule for every shift type. Only the 9:00 PM–8:00 AM coverage hours
+ * are confirmed; phone pick-up and sweep times per shift type are not, so they start empty.
+ * Set real defaults per type from Shift setup ("Save as … default"), which stores them on
+ * the device, or edit them here. Times earlier than the shift start are after midnight.
+ */
+export const DEFAULT_SCHEDULES: Record<ShiftType, ShiftSchedule> = {
+  weekday: { start: '21:00', end: '08:00', phonePickup: '', sweepTimes: [] },
+  weekend: { start: '21:00', end: '08:00', phonePickup: '', sweepTimes: [] },
+  peak: { start: '21:00', end: '08:00', phonePickup: '', sweepTimes: [] },
 }

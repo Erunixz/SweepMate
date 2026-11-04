@@ -4,44 +4,50 @@
 
 /* Design tokens. Colours are defined once per theme and exposed as Tailwind colours. */
 :root {
-  --bg: #f5f6f8;
+  --bg: #f6f7f9;
   --surface: #ffffff;
-  --surface-2: #eef0f4;
-  --fg: #111827;
-  --muted: #4b5563;
-  --line: #d6dae1;
-  --accent: #1d4ed8;
+  --surface-2: #f1f2f5;
+  --fg: #0b0d12;
+  --muted: #5b6170;
+  --line: #e4e6eb;
+  --accent: #4f46e5;
+  --accent-2: #7c3aed;
   --accent-fg: #ffffff;
-  --accent-soft: #dbe6ff;
+  --accent-soft: #eef0ff;
   --ok: #047857;
-  --ok-soft: #d1fae5;
-  --warn: #92400e;
-  --warn-soft: #fef3c7;
-  --danger: #b91c1c;
-  --danger-soft: #fee2e2;
-  --skip: #6b21a8;
-  --skip-soft: #f3e8ff;
+  --ok-soft: #e3f8ef;
+  --warn: #9a4a07;
+  --warn-soft: #fff4e0;
+  --danger: #c0262d;
+  --danger-soft: #fdecec;
+  --skip: #6d28d9;
+  --skip-soft: #f3edff;
+  --shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 4px 16px -4px rgb(16 24 40 / 0.08);
+  --shadow-lg: 0 2px 4px rgb(16 24 40 / 0.04), 0 16px 40px -12px rgb(79 70 229 / 0.35);
   color-scheme: light;
 }
 
 .dark {
-  --bg: #0b0f17;
-  --surface: #141a24;
-  --surface-2: #1d2532;
-  --fg: #f1f5f9;
-  --muted: #a3adbd;
-  --line: #2c3646;
-  --accent: #6d9bff;
-  --accent-fg: #0b0f17;
-  --accent-soft: #1c2c4f;
+  --bg: #0a0b10;
+  --surface: #13151d;
+  --surface-2: #1b1e29;
+  --fg: #f4f5f8;
+  --muted: #9aa1b2;
+  --line: #262a37;
+  --accent: #8b85ff;
+  --accent-2: #b48cff;
+  --accent-fg: #0a0b10;
+  --accent-soft: #1f1d3d;
   --ok: #4ade9b;
-  --ok-soft: #0f3326;
-  --warn: #fbbf24;
-  --warn-soft: #3a2c0b;
-  --danger: #f87171;
-  --danger-soft: #3d1414;
-  --skip: #c4a1ff;
-  --skip-soft: #2b1d45;
+  --ok-soft: #0e2a20;
+  --warn: #fbbf4d;
+  --warn-soft: #2d2109;
+  --danger: #ff7b7b;
+  --danger-soft: #331314;
+  --skip: #c4a7ff;
+  --skip-soft: #261b40;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -8px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.4), 0 16px 40px -12px rgb(139 133 255 / 0.35);
   color-scheme: dark;
 }
 
@@ -53,6 +59,7 @@
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
   --color-accent-fg: var(--accent-fg);
   --color-accent-soft: var(--accent-soft);
   --color-ok: var(--ok);
@@ -63,7 +70,9 @@
   --color-danger-soft: var(--danger-soft);
   --color-skip: var(--skip);
   --color-skip-soft: var(--skip-soft);
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --shadow-card: var(--shadow);
+  --shadow-glow: var(--shadow-lg);
+  --font-sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
 }
 
 html,
@@ -75,7 +84,21 @@ body {
 
 body {
   font-family: var(--font-sans);
+  font-feature-settings: 'cv11', 'ss01';
   line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Brand gradient used for the hero, primary actions and progress. */
+/* Fixed deep indigo → violet in both themes so white text on it always has strong contrast. */
+.bg-brand {
+  background-image: linear-gradient(135deg, #4f46e5, #7c3aed);
+}
+.text-brand {
+  background-image: linear-gradient(135deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 :focus-visible {

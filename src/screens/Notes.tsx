@@ -1,8 +1,11 @@
 import { useState } from 'react'
+import { BottomNav } from '../components/BottomNav'
+import { cx } from '../components/cx'
+import { Icon } from '../components/Icon'
 import { NoteSheet } from '../components/NoteSheet'
 import { SaveIndicator } from '../components/SaveIndicator'
 import { ConfirmSheet } from '../components/Sheet'
-import { Badge, Button, Card, Header, Page } from '../components/ui'
+import { Badge, Button, Card, Header, Page, TextArea } from '../components/ui'
 import { NOTE_KIND_ORDER, NOTE_KINDS } from '../config/noteKinds'
 import { deleteNote, sortNotes } from '../domain/shift'
 import { labelShiftTime } from '../domain/time'
@@ -13,7 +16,7 @@ const statusTone = (n: Note) =>
   n.status === 'observed' || n.status === 'not-filed' || n.status === 'open' ? 'warn' : n.status ? 'ok' : 'neutral'
 
 export function Notes() {
-  const { shift, navigate, updateActive } = useActiveShift()
+  const { shift, updateActive } = useActiveShift()
   const [editing, setEditing] = useState<Note | null>(null)
   const [adding, setAdding] = useState(false)
   const [toDelete, setToDelete] = useState<Note | null>(null)
@@ -27,23 +30,44 @@ export function Notes() {
 
   return (
     <>
-      <Header title="Notes & incidents" onBack={() => navigate({ name: 'overview' })} backLabel="Overview" right={<SaveIndicator />} />
-      <Page className="pb-28">
+      <Header title="Notes & incidents" subtitle="Printed under Extra Notes in the report" right={<SaveIndicator />} />
+      <Page className="pb-44">
+        <Card className="flex flex-col gap-2">
+          <TextArea
+            label="Extra Notes"
+            hint="Free text, printed under Extra Notes in the report (one line per entry). Use Add note below for timed entries."
+            value={shift.extraNotes}
+            rows={3}
+            onChange={(e) => updateActive((s) => ({ ...s, extraNotes: e.target.value, updatedAt: new Date().toISOString() }))}
+          />
+        </Card>
         <div className="flex gap-1.5 overflow-x-auto -mx-4 px-4 pb-1" role="group" aria-label="Filter notes">
           {(['all', ...NOTE_KIND_ORDER] as const).map((k) => (
-            <Button
+            <button
               key={k}
-              variant={filter === k ? 'primary' : 'secondary'}
-              className="shrink-0 min-h-10"
+              type="button"
               aria-pressed={filter === k}
               onClick={() => setFilter(k)}
+              className={cx(
+                'shrink-0 min-h-10 rounded-full px-4 text-sm font-semibold border transition',
+                filter === k ? 'bg-fg text-bg border-fg' : 'bg-surface text-muted border-line hover:text-fg',
+              )}
             >
-              {k === 'all' ? 'All' : NOTE_KINDS[k].short} ({k === 'all' ? shift.notes.length : shift.notes.filter((n) => n.kind === k).length})
-            </Button>
+              {k === 'all' ? 'All' : NOTE_KINDS[k].short}{' '}
+              <span className="opacity-60">{k === 'all' ? shift.notes.length : shift.notes.filter((n) => n.kind === k).length}</span>
+            </button>
           ))}
         </div>
 
-        {notes.length === 0 && <p className="text-muted text-center py-8">No notes yet.</p>}
+        {notes.length === 0 && (
+          <div className="flex flex-col items-center gap-2 py-10 text-center">
+            <div aria-hidden="true" className="size-12 rounded-2xl bg-accent-soft text-accent grid place-items-center">
+              <Icon name="notes" size={22} />
+            </div>
+            <p className="font-semibold">No notes yet</p>
+            <p className="text-sm text-muted max-w-xs">Observations, maintenance, IRs, SOCs and follow-ups you add during the shift show up here.</p>
+          </div>
+        )}
 
         <ul className="flex flex-col gap-3">
           {notes.map((n) => {
@@ -64,11 +88,13 @@ export function Notes() {
                   {n.contacts && <p className="text-sm"><span className="font-semibold">Contacts:</span> {n.contacts}</p>}
                   {n.reference && <p className="text-sm"><span className="font-semibold">Ref #:</span> {n.reference}</p>}
                   {n.followUp && <p className="text-sm"><span className="font-semibold">Follow-up:</span> {n.followUp}</p>}
-                  <div className="flex gap-2 justify-end">
-                    <Button variant="ghost" className="text-danger" onClick={() => setToDelete(n)}>
+                  <div className="flex gap-1 justify-end -mb-1">
+                    <Button variant="ghost" size="sm" className="text-danger" onClick={() => setToDelete(n)}>
                       Delete
                     </Button>
-                    <Button onClick={() => setEditing(n)}>Edit</Button>
+                    <Button variant="ghost" size="sm" className="text-accent" onClick={() => setEditing(n)}>
+                      Edit
+                    </Button>
                   </div>
                 </Card>
               </li>
@@ -77,13 +103,15 @@ export function Notes() {
         </ul>
       </Page>
 
-      <div className="fixed inset-x-0 bottom-0 border-t border-line bg-bg/95 backdrop-blur">
-        <div className="mx-auto max-w-2xl px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <Button variant="primary" size="lg" className="w-full" onClick={() => setAdding(true)}>
-            + Add note
+      <div className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 pointer-events-none">
+        <div className="mx-auto max-w-2xl px-4 flex justify-end">
+          <Button variant="primary" size="lg" className="pointer-events-auto rounded-full px-6" onClick={() => setAdding(true)}>
+            <Icon name="plus" />
+            Add note
           </Button>
         </div>
       </div>
+      <BottomNav />
 
       <NoteSheet
         open={adding || !!editing}

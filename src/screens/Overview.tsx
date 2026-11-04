@@ -1,19 +1,35 @@
 import { useState } from 'react'
+import { BottomNav } from '../components/BottomNav'
+import { cx } from '../components/cx'
+import { Icon } from '../components/Icon'
 import { SaveIndicator } from '../components/SaveIndicator'
-import { ThemeToggle } from '../components/ThemeToggle'
-import { Badge, Button, Card, Header, Page, ProgressBar, TextInput } from '../components/ui'
-import { SHIFT_TEMPLATES } from '../config/schedules'
-import { buildingProgress, firstUnansweredIndex, hasStarted, isDone, sweepProgress, type Progress } from '../domain/progress'
-import { walkingBuildingOrder } from '../domain/route'
-import { updateSweep } from '../domain/shift'
-import { formatDateShort, labelShiftTime, nowTime } from '../domain/time'
+import { Badge, Button, Card, Eyebrow, Header, Page, ProgressBar, TextInput } from '../components/ui'
+import { SHIFT_TYPE_LABELS } from '../config/schedules'
+import { copyText, downloadText } from '../domain/clipboard'
+import { buildingProgress, firstUnansweredIndex, hasStarted, isDone, missingDetails, missingEntries, sweepProgress } from '../domain/progress'
+import { cleanText, generateReport, reportFileName } from '../domain/report'
+import { getBuilding, getRoute, walkingBuildingOrder } from '../domain/route'
+import { caPool, sweepBuildingCAs, updateSweep } from '../domain/shift'
+import { formatDateShort, formatTime12, labelShiftTime } from '../domain/time'
 import type { Shift, Sweep } from '../domain/types'
+import { useReportTemplate } from '../state/reportTemplate'
 import { useActiveShift } from '../state/store'
+
+/** The next building to walk: the first unfinished building of the first unfinished sweep. */
+function nextUp(shift: Shift) {
+  for (const sweep of shift.sweeps) {
+    if (sweep.missed) continue
+    for (const b of walkingBuildingOrder(shift.startingBuildingId)) {
+      if (!isDone(buildingProgress(sweep, b.id))) return { sweep, buildingId: b.id }
+    }
+  }
+  return null
+}
 
 export function Overview() {
   const { shift, navigate, updateActive } = useActiveShift()
-  const tpl = SHIFT_TEMPLATES[shift.type]
-  const openNotes = shift.notes.filter((n) => n.kind === 'follow-up' && n.status === 'open').length
+  const openFollowUps = shift.notes.filter((n) => n.kind === 'follow-up' && n.status === 'open').length
+  const names = caPool(shift)
 
   return (
     <>
@@ -21,8 +37,8 @@ export function Overview() {
         title={formatDateShort(shift.date)}
         subtitle={
           <>
-            {tpl.label} {shift.startTime}–{shift.endTime} · {shift.caNames.join(', ')}
-            {shift.partners.length > 0 && ` + ${shift.partners.join(', ')}`}
+            {SHIFT_TYPE_LABELS[shift.type]} · {formatTime12(shift.startTime)}–{formatTime12(shift.endTime)}
+            {names.length > 0 && ` · ${names.join(', ')}`}
           </>
         }
         onBack={() => navigate({ name: 'welcome' })}
@@ -30,113 +46,236 @@ export function Overview() {
         right={
           <div className="flex items-center">
             <SaveIndicator />
-            <ThemeToggle />
+            <Button variant="ghost" size="sm" onClick={() => navigate({ name: 'setup', mode: 'edit' })} aria-label="Edit shift">
+              <Icon name="edit" />
+            </Button>
           </div>
         }
       />
-      <Page>
+      <Page className="pb-28">
         {shift.isDemo && (
-          <p className="rounded-xl bg-warn-soft text-warn p-3 text-sm font-semibold">
+          <p className="rounded-2xl bg-warn-soft text-warn px-4 py-3 text-sm font-semibold">
             Demo shift – fictional data. It's kept separate from your real shifts.
           </p>
         )}
-        <div className="grid grid-cols-3 gap-2">
-          <Button onClick={() => navigate({ name: 'notes' })}>
-            Notes
-            {shift.notes.length > 0 && <Badge tone={openNotes ? 'warn' : 'neutral'}>{shift.notes.length}</Badge>}
-          </Button>
-          <Button onClick={() => navigate({ name: 'report' })}>Report</Button>
-          <Button onClick={() => navigate({ name: 'setup', mode: 'edit' })}>Edit shift</Button>
-        </div>
 
+        <UpNext shift={shift} />
+
+        {shift.sweeps.length === 0 && (
+          <Card>
+            <p className="text-sm">
+              No sweeps scheduled yet.{' '}
+              <button type="button" className="font-semibold text-accent" onClick={() => navigate({ name: 'setup', mode: 'edit' })}>
+                Add sweep times
+              </button>
+            </p>
+          </Card>
+        )}
+
+        {shift.sweeps.length > 0 && <Eyebrow className="px-1 pt-2">Sweeps</Eyebrow>}
         {shift.sweeps.map((sweep, i) => (
           <SweepCard key={sweep.id} shift={shift} sweep={sweep} number={i + 1} />
         ))}
 
-        <Card className="flex flex-col gap-2">
-          <p className="text-sm text-muted">
-            {shift.finished
-              ? 'This shift is marked finished. You can still edit it.'
-              : 'Mark the shift finished once the report is submitted. It stays saved on this device until you delete it.'}
-          </p>
-          <Button onClick={() => updateActive((s) => ({ ...s, finished: !s.finished, updatedAt: new Date().toISOString() }))}>
+        <ReportExport shift={shift} />
+
+        <div className="flex flex-col items-center gap-1 pt-2 text-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted"
+            onClick={() => updateActive((s) => ({ ...s, finished: !s.finished, updatedAt: new Date().toISOString() }))}
+          >
             {shift.finished ? 'Reopen shift' : 'Mark shift finished'}
           </Button>
-        </Card>
+          <p className="text-xs text-muted">{shift.finished ? 'Finished shifts stay editable.' : 'Saved on this device until you delete it.'}</p>
+        </div>
       </Page>
+      <BottomNav badge={{ notes: openFollowUps }} />
     </>
   )
 }
 
-function progressLabel(p: Progress) {
-  const parts = [`${p.answered + p.skipped}/${p.total}`]
-  if (p.skipped) parts.push(`${p.skipped} not checked`)
-  return parts.join(' · ')
+/** Hero card with the single next action. */
+function UpNext({ shift }: { shift: Shift }) {
+  const { navigate } = useActiveShift()
+  const next = nextUp(shift)
+  if (!shift.sweeps.length) return null
+
+  if (!next) {
+    return (
+      <section className="rounded-3xl bg-brand text-white p-5 shadow-glow flex flex-col gap-1">
+        <Eyebrow className="text-white/80">All done</Eyebrow>
+        <h2 className="text-2xl font-extrabold tracking-tight">Every sweep is recorded.</h2>
+        <p className="text-white/85 text-sm">Copy the report below and paste it into the reporting system.</p>
+      </section>
+    )
+  }
+
+  const { sweep, buildingId } = next
+  const building = getBuilding(buildingId)!
+  const p = buildingProgress(sweep, buildingId)
+  const index = firstUnansweredIndex(sweep, buildingId)
+  const nextLocation = getRoute(buildingId)[index]
+
+  return (
+    <section className="rounded-3xl bg-brand text-white p-5 shadow-glow flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <Eyebrow className="text-white/80">Up next · {labelShiftTime(shift.startTime, sweep.scheduledTime)} sweep</Eyebrow>
+        <h2 className="text-3xl font-extrabold tracking-tight">{building.name}</h2>
+        <p className="text-white/85 text-sm">
+          {hasStarted(p) ? `${p.answered + p.skipped} of ${p.total} done · next: ${nextLocation?.label}` : `${p.total} locations · starts at ${nextLocation?.label}`}
+        </p>
+      </div>
+      <div className="h-1.5 rounded-full bg-white/25 overflow-hidden" aria-hidden="true">
+        <div className="h-full rounded-full bg-white transition-[width] duration-500" style={{ width: `${((p.answered + p.skipped) / p.total) * 100}%` }} />
+      </div>
+      <button
+        type="button"
+        onClick={() => navigate({ name: 'walk', sweepId: sweep.id, buildingId, index })}
+        className="min-h-14 rounded-2xl bg-white text-[#3b2fd1] font-bold text-base flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition"
+      >
+        <Icon name="play" size={16} />
+        {hasStarted(p) ? `Continue ${building.name}` : `Start ${building.name}`}
+      </button>
+    </section>
+  )
+}
+
+/** One-tap export of the whole shift — every sweep in a single ready-to-paste report. */
+function ReportExport({ shift }: { shift: Shift }) {
+  const { navigate } = useActiveShift()
+  const { template } = useReportTemplate()
+  const [status, setStatus] = useState('')
+  const text = cleanText(shift.reportDraft ?? generateReport(shift, template))
+  const missing = missingEntries(shift).reduce((n, g) => n + g.locations.length, 0) + missingDetails(shift).length
+  const n = shift.sweeps.length
+
+  return (
+    <Card className="flex flex-col gap-3 p-5">
+      <div className="flex items-start gap-3">
+        <div aria-hidden="true" className="size-10 rounded-2xl bg-accent-soft text-accent grid place-items-center shrink-0">
+          <Icon name="report" size={20} />
+        </div>
+        <div className="flex-1">
+          <h2 className="font-bold tracking-tight">Coverage report</h2>
+          <p className="text-sm text-muted">
+            All {n} sweep{n === 1 ? '' : 's'} in one plain-text report, ready to paste.
+            {shift.reportDraft !== null && ' Includes your edits.'}
+          </p>
+        </div>
+      </div>
+      {missing > 0 && (
+        <p className="rounded-xl bg-warn-soft text-warn px-3 py-2 text-sm font-semibold">
+          {missing} item{missing === 1 ? '' : 's'} not recorded yet – shown as “{template.unanswered}”.
+        </p>
+      )}
+      <div className="grid grid-cols-[1fr_auto] gap-2">
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={async () => setStatus((await copyText(text)) ? 'Full report copied' : 'Copy failed – open the Report tab and copy manually')}
+        >
+          <Icon name="copy" />
+          Copy Full Report
+        </Button>
+        <Button size="lg" onClick={() => downloadText(reportFileName(shift), text)} aria-label="Download TXT">
+          <Icon name="download" />
+          TXT
+        </Button>
+      </div>
+      <div className="flex items-center justify-between min-h-6">
+        <p role="status" className="text-sm text-ok font-semibold">
+          {status && (
+            <>
+              <Icon name="check" size={14} className="inline -mt-0.5" /> {status}
+            </>
+          )}
+        </p>
+        <button type="button" onClick={() => navigate({ name: 'report' })} className="min-h-11 -my-2 px-2 -mr-2 rounded-xl text-sm font-semibold text-accent hover:bg-accent-soft">
+          Preview & edit ›
+        </button>
+      </div>
+    </Card>
+  )
 }
 
 function SweepCard({ shift, sweep, number }: { shift: Shift; sweep: Sweep; number: number }) {
   const { navigate, updateActive } = useActiveShift()
   const [showMissed, setShowMissed] = useState(sweep.missed)
   const total = sweepProgress(shift, sweep)
-  const patch = (p: Partial<Sweep>) => updateActive((s) => updateSweep(s, sweep.id, p))
+  const patch = (p: Partial<Pick<Sweep, 'missed' | 'missedReason'>>) => updateActive((s) => updateSweep(s, sweep.id, p))
 
   const status = sweep.missed ? (
     <Badge tone="danger">Missed</Badge>
   ) : isDone(total) ? (
-    <Badge tone="ok">Complete</Badge>
+    <Badge tone="ok">
+      <Icon name="check" size={12} /> Done
+    </Badge>
   ) : hasStarted(total) ? (
     <Badge tone="accent">In progress</Badge>
   ) : (
-    <Badge>Not started</Badge>
+    <Badge>Upcoming</Badge>
   )
 
   return (
-    <Card className="flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <h2 className="flex-1 text-lg font-bold">
-          Sweep {number} <span className="text-muted font-semibold">· {labelShiftTime(shift.startTime, sweep.scheduledTime)}</span>
-        </h2>
+    <Card className={cx('flex flex-col gap-3', sweep.missed && 'opacity-80')}>
+      <div className="flex items-center gap-3">
+        <div className="flex-1">
+          <h3 className="text-xl font-extrabold tracking-tight tabular-nums">{labelShiftTime(shift.startTime, sweep.scheduledTime)}</h3>
+          <p className="text-xs text-muted">Sweep {number}</p>
+        </div>
         {status}
       </div>
 
       {!sweep.missed && (
-        <>
-          <ProgressBar value={total.answered + total.skipped} max={total.total} label={`Sweep ${number} progress`} />
-          <ul className="flex flex-col gap-2">
-            {walkingBuildingOrder(shift.startingBuildingId).map((b) => {
-              const p = buildingProgress(sweep, b.id)
-              const action = isDone(p) ? 'Review' : hasStarted(p) ? 'Continue' : 'Start'
-              return (
-                <li key={b.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!sweep.actualStart) patch({ actualStart: nowTime() })
-                      navigate({ name: 'walk', sweepId: sweep.id, buildingId: b.id, index: isDone(p) ? 0 : firstUnansweredIndex(sweep, b.id) })
-                    }}
-                    className="w-full flex items-center gap-3 rounded-xl border border-line bg-surface-2 px-3 min-h-14 text-left hover:border-accent"
+        <ul className="flex flex-col gap-1.5">
+          {walkingBuildingOrder(shift.startingBuildingId).map((b) => {
+            const p = buildingProgress(sweep, b.id)
+            const bs = sweep.buildings[b.id]
+            const done = isDone(p)
+            const cas = sweepBuildingCAs(shift, sweep, b.id)
+            const times = bs?.actualStart || bs?.actualEnd ? `${formatTime12(bs.actualStart) || '?'}–${formatTime12(bs.actualEnd) || '…'}` : ''
+            return (
+              <li key={b.id}>
+                <button
+                  type="button"
+                  onClick={() => navigate({ name: 'walk', sweepId: sweep.id, buildingId: b.id, index: done ? 0 : firstUnansweredIndex(sweep, b.id) })}
+                  className="w-full flex items-center gap-3 rounded-2xl bg-surface-2/70 px-3.5 py-2.5 min-h-14 text-left transition hover:bg-surface-2 active:scale-[0.99]"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cx(
+                      'size-8 shrink-0 rounded-full grid place-items-center text-xs font-bold',
+                      done ? 'bg-ok-soft text-ok' : hasStarted(p) ? 'bg-accent-soft text-accent' : 'bg-surface text-muted border border-line',
+                    )}
                   >
-                    <span className="flex-1">
-                      <span className="block font-semibold">{b.name}</span>
-                      <span className="block text-xs text-muted">{progressLabel(p)}</span>
+                    {done ? <Icon name="check" size={16} /> : b.name.charAt(0)}
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="font-semibold">{b.name}</span>
+                      <span className="text-xs text-muted tabular-nums">
+                        {p.answered + p.skipped}/{p.total}
+                      </span>
                     </span>
-                    <span className={isDone(p) ? 'text-ok font-semibold text-sm' : 'text-accent font-semibold text-sm'}>
-                      {action} ›
-                    </span>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-          <div className="grid grid-cols-2 gap-3">
-            <TimeWithNow label="Actual start" value={sweep.actualStart} onChange={(v) => patch({ actualStart: v })} />
-            <TimeWithNow label="Actual end" value={sweep.actualEnd} onChange={(v) => patch({ actualEnd: v })} />
-          </div>
-        </>
+                    <ProgressBar value={p.answered + p.skipped} max={p.total} label={`${b.name} progress`} className="h-1 mt-1.5" />
+                    {(times || cas.length > 0 || p.skipped > 0) && (
+                      <span className="block text-xs text-muted truncate mt-1">
+                        {[times, cas.join(', '), p.skipped ? `${p.skipped} not checked` : ''].filter(Boolean).join(' · ')}
+                      </span>
+                    )}
+                  </span>
+                  <Icon name="chevron" className="text-muted shrink-0" />
+                </button>
+              </li>
+            )
+          })}
+        </ul>
       )}
 
       {showMissed ? (
-        <div className="flex flex-col gap-2 rounded-xl bg-danger-soft/50 p-3">
+        <div className="flex flex-col gap-2 rounded-2xl bg-danger-soft/60 p-3">
           <TextInput
             label="Reason sweep was missed"
             value={sweep.missedReason}
@@ -158,33 +297,16 @@ function SweepCard({ shift, sweep, number }: { shift: Shift; sweep: Sweep; numbe
       ) : (
         <Button
           variant="ghost"
-          className="self-start text-muted"
+          size="sm"
+          className="self-start text-muted -ml-2"
           onClick={() => {
             setShowMissed(true)
             patch({ missed: true })
           }}
         >
-          Mark sweep as missed…
+          Mark as missed…
         </Button>
       )}
     </Card>
-  )
-}
-
-function TimeWithNow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <TextInput label={label} type="time" value={value} onChange={(e) => onChange(e.target.value)} />
-      <div className="flex gap-1">
-        <Button variant="ghost" className="flex-1 text-xs min-h-9" onClick={() => onChange(nowTime())}>
-          Now
-        </Button>
-        {value && (
-          <Button variant="ghost" className="flex-1 text-xs min-h-9" onClick={() => onChange('')}>
-            Clear
-          </Button>
-        )}
-      </div>
-    </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useId, useState } from 'react'
 import type { LocationEntry, RouteLocation } from '../domain/types'
 import { cx } from './cx'
+import { Icon } from './Icon'
 import { Badge, Button } from './ui'
 
 const QUICK_COUNTS = [0, 1, 2, 3, 4, 5]
@@ -73,23 +74,23 @@ export function LocationCard({
   }
 
   return (
-    <div className="flex flex-col gap-4 pb-40">
-      <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-5 pb-32">
+      <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2 text-xs text-muted">
-          <span>{location.section}</span>
+          <span className="font-semibold">{location.section}</span>
           {location.direction && (
             <Badge tone="accent">
               <span className="sr-only">Walking direction: </span>
               {location.direction}
             </Badge>
           )}
-          <span className="ml-auto">{position}</span>
+          <span className="ml-auto tabular-nums">{position}</span>
         </div>
-        <h2 className="text-2xl font-bold leading-tight">{location.label}</h2>
-        <div className="flex items-center gap-2">
+        <h2 className="text-[28px] font-extrabold tracking-tight leading-tight">{location.label}</h2>
+        <div className="flex items-center gap-2 min-h-9">
           {entryStateBadge(entry)}
           {entry && (
-            <Button variant="ghost" className="min-h-9 text-xs text-muted" onClick={onClear}>
+            <Button variant="ghost" size="sm" className="text-xs text-muted" onClick={onClear}>
               Clear answer
             </Button>
           )}
@@ -103,7 +104,7 @@ export function LocationCard({
             <label
               key={opt}
               className={cx(
-                'flex items-center gap-3 min-h-14 rounded-xl border px-4 font-semibold cursor-pointer has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-accent',
+                'flex items-center gap-3 min-h-14 rounded-2xl border px-4 font-semibold cursor-pointer transition has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-accent',
                 status === opt ? 'border-accent bg-accent-soft' : 'border-line bg-surface',
               )}
             >
@@ -123,14 +124,20 @@ export function LocationCard({
           ))}
         </fieldset>
       ) : (
-        <div className="flex flex-col gap-3">
-          <label htmlFor={countId} className="text-sm font-semibold">
+        <div className="rounded-3xl bg-surface border border-line/70 shadow-card p-4 flex flex-col gap-4">
+          <label htmlFor={countId} className="text-xs font-bold uppercase tracking-[0.08em] text-muted text-center">
             People present
           </label>
-          <div className="grid grid-cols-[4.5rem_1fr_4.5rem] gap-2">
-            <Button size="lg" onClick={() => step(-1)} aria-label="Decrease count" className="h-20" disabled={!countValid || parsed === 0}>
-              <span aria-hidden="true" className="text-4xl leading-none">−</span>
-            </Button>
+          <div className="grid grid-cols-[4rem_1fr_4rem] items-center gap-2">
+            <button
+              type="button"
+              onClick={() => step(-1)}
+              aria-label="Decrease count"
+              disabled={!countValid || parsed === 0}
+              className="size-16 rounded-full bg-surface-2 text-fg grid place-items-center transition active:scale-95 disabled:opacity-30"
+            >
+              <span aria-hidden="true" className="text-3xl leading-none font-medium">−</span>
+            </button>
             <input
               id={countId}
               inputMode="numeric"
@@ -150,25 +157,33 @@ export function LocationCard({
                   save()
                 }
               }}
-              className="h-20 w-full rounded-xl border-2 border-line bg-surface text-center text-4xl font-bold tabular-nums focus:border-accent"
+              className="h-24 w-full bg-transparent text-center text-7xl font-extrabold tracking-tight tabular-nums placeholder:text-line focus:outline-none rounded-2xl focus:bg-surface-2/60"
             />
-            <Button size="lg" onClick={() => step(1)} aria-label="Increase count" className="h-20">
-              <span aria-hidden="true" className="text-4xl leading-none">+</span>
-            </Button>
+            <button
+              type="button"
+              onClick={() => step(1)}
+              aria-label="Increase count"
+              className="size-16 rounded-full bg-brand text-white grid place-items-center shadow-glow transition active:scale-95"
+            >
+              <span aria-hidden="true" className="text-3xl leading-none font-medium">+</span>
+            </button>
           </div>
           <div className="grid grid-cols-6 gap-1.5" role="group" aria-label="Quick counts">
             {QUICK_COUNTS.map((n) => (
-              <Button
+              <button
                 key={n}
-                variant={count === String(n) ? 'primary' : 'secondary'}
-                className="min-h-12 text-base px-0"
+                type="button"
                 onClick={() => {
                   setCount(String(n))
                   setWarning('')
                 }}
+                className={cx(
+                  'min-h-12 rounded-xl text-base font-bold tabular-nums transition active:scale-95',
+                  count === String(n) ? 'bg-fg text-bg' : 'bg-surface-2 text-fg hover:bg-line/60',
+                )}
               >
                 {n}
-              </Button>
+              </button>
             ))}
           </div>
         </div>
@@ -184,27 +199,27 @@ export function LocationCard({
           onChange={(e) => setObservation(e.target.value)}
           rows={2}
           placeholder="e.g. lights off, furniture moved, noise"
-          className="w-full rounded-xl border border-line bg-surface px-3 py-2"
+          className="w-full rounded-2xl border border-line bg-surface px-3.5 py-2.5 focus:outline-none focus:ring-4 focus:ring-accent/15 focus:border-accent"
         />
       </div>
 
       {warning && (
-        <p role="alert" className="rounded-lg bg-warn-soft text-warn p-2 text-sm font-semibold">
+        <p role="alert" className="rounded-2xl bg-warn-soft text-warn px-3 py-2 text-sm font-semibold">
           {warning}
         </p>
       )}
 
       {/* Thumb-zone action bar */}
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-bg/95 backdrop-blur">
-        <div className="mx-auto max-w-2xl grid grid-cols-[1fr_1fr] gap-2 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <Button size="lg" onClick={back} disabled={!canGoBack}>
-            ‹ Back
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line/60 bg-bg/85 backdrop-blur-xl">
+        <div className="mx-auto max-w-2xl grid grid-cols-[3.5rem_auto_1fr] gap-2 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <Button size="lg" onClick={back} disabled={!canGoBack} aria-label="Back" className="px-0">
+            <Icon name="back" size={22} />
           </Button>
-          <Button size="lg" variant="skip" onClick={() => onSkip(observation)}>
+          <Button size="lg" variant="skip" onClick={() => onSkip(observation)} className="px-3 text-sm whitespace-nowrap">
             Not Checked
           </Button>
-          <Button size="lg" variant="primary" onClick={save} className="col-span-2 text-lg">
-            Save &amp; Next ›
+          <Button size="lg" variant="primary" onClick={save} className="px-3 whitespace-nowrap">
+            Save &amp; Next
           </Button>
         </div>
       </div>

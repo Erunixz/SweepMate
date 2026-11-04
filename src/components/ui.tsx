@@ -1,21 +1,21 @@
-import { cx } from './cx'
 import { useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react'
-
+import { cx } from './cx'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'skip'
-type Size = 'md' | 'lg'
+type Size = 'sm' | 'md' | 'lg'
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-accent text-accent-fg hover:opacity-90',
-  secondary: 'bg-surface text-fg border border-line hover:bg-surface-2',
+  primary: 'bg-brand text-white shadow-glow hover:brightness-110',
+  secondary: 'bg-surface text-fg border border-line shadow-card hover:bg-surface-2',
   ghost: 'text-fg hover:bg-surface-2',
-  danger: 'bg-danger-soft text-danger border border-danger/40 hover:opacity-90',
-  skip: 'bg-skip-soft text-skip border border-skip/40 hover:opacity-90',
+  danger: 'bg-danger-soft text-danger hover:brightness-95',
+  skip: 'bg-skip-soft text-skip hover:brightness-95',
 }
 
 const sizes: Record<Size, string> = {
-  md: 'min-h-11 px-4 text-sm',
-  lg: 'min-h-14 px-5 text-base',
+  sm: 'min-h-9 px-3 text-sm rounded-xl',
+  md: 'min-h-11 px-4 text-sm rounded-xl',
+  lg: 'min-h-14 px-5 text-base rounded-2xl',
 }
 
 export function Button({
@@ -29,7 +29,7 @@ export function Button({
     <button
       type={type}
       className={cx(
-        'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition select-none',
+        'inline-flex items-center justify-center gap-2 font-semibold tracking-tight transition select-none active:scale-[0.98]',
         'disabled:opacity-40 disabled:pointer-events-none',
         variants[variant],
         sizes[size],
@@ -41,7 +41,12 @@ export function Button({
 }
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
-  return <section className={cx('rounded-2xl bg-surface border border-line p-4', className)}>{children}</section>
+  return <section className={cx('rounded-3xl bg-surface border border-line/70 shadow-card p-4', className)}>{children}</section>
+}
+
+/** Small uppercase label above a group of content. */
+export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
+  return <p className={cx('text-[11px] font-bold uppercase tracking-[0.08em] text-muted', className)}>{children}</p>
 }
 
 export function Field({
@@ -67,7 +72,7 @@ export function Field({
 }
 
 const inputBase =
-  'w-full rounded-xl border border-line bg-surface px-3 text-base text-fg placeholder:text-muted/70 focus:border-accent'
+  'w-full rounded-xl border border-line bg-surface-2/60 px-3 text-base text-fg placeholder:text-muted/70 transition focus:border-accent focus:bg-surface focus:outline-none focus:ring-4 focus:ring-accent/15'
 
 export function TextInput({
   label,
@@ -78,7 +83,7 @@ export function TextInput({
   const id = useId()
   return (
     <Field label={label} hint={hint} htmlFor={props.id ?? id}>
-      <input id={props.id ?? id} className={cx(inputBase, 'min-h-11', className)} {...props} />
+      <input id={props.id ?? id} className={cx(inputBase, 'min-h-12', className)} {...props} />
     </Field>
   )
 }
@@ -92,7 +97,7 @@ export function TextArea({
   const id = useId()
   return (
     <Field label={label} hint={hint} htmlFor={props.id ?? id}>
-      <textarea id={props.id ?? id} className={cx(inputBase, 'py-2 min-h-20', className)} {...props} />
+      <textarea id={props.id ?? id} className={cx(inputBase, 'py-2.5 min-h-20', className)} {...props} />
     </Field>
   )
 }
@@ -111,7 +116,7 @@ export function Select({
   const id = useId()
   return (
     <Field label={label} hint={hint} htmlFor={props.id ?? id}>
-      <select id={props.id ?? id} className={cx(inputBase, 'min-h-11', className)} {...props}>
+      <select id={props.id ?? id} className={cx(inputBase, 'min-h-12', className)} {...props}>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
@@ -138,23 +143,16 @@ export function Segmented<T extends string>({
   return (
     <fieldset className="flex flex-col gap-1.5">
       <legend className="text-sm font-semibold mb-1.5">{label}</legend>
-      <div className="grid gap-1 rounded-xl bg-surface-2 p-1" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
+      <div className="grid gap-1 rounded-2xl bg-surface-2 p-1" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
         {options.map((o) => (
           <label
             key={o.value}
             className={cx(
-              'min-h-10 flex items-center justify-center rounded-lg text-sm font-semibold cursor-pointer has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-accent',
-              value === o.value ? 'bg-surface shadow-sm text-fg' : 'text-muted',
+              'min-h-10 flex items-center justify-center rounded-xl text-sm font-semibold cursor-pointer transition has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-accent',
+              value === o.value ? 'bg-surface shadow-card text-fg' : 'text-muted hover:text-fg',
             )}
           >
-            <input
-              type="radio"
-              name={name}
-              value={o.value}
-              checked={value === o.value}
-              onChange={() => onChange(o.value)}
-              className="sr-only"
-            />
+            <input type="radio" name={name} value={o.value} checked={value === o.value} onChange={() => onChange(o.value)} className="sr-only" />
             {o.label}
           </label>
         ))}
@@ -163,7 +161,13 @@ export function Segmented<T extends string>({
   )
 }
 
-export function Badge({ tone = 'neutral', children }: { tone?: 'neutral' | 'ok' | 'warn' | 'danger' | 'skip' | 'accent'; children: ReactNode }) {
+export function Badge({
+  tone = 'neutral',
+  children,
+}: {
+  tone?: 'neutral' | 'ok' | 'warn' | 'danger' | 'skip' | 'accent'
+  children: ReactNode
+}) {
   const tones = {
     neutral: 'bg-surface-2 text-muted',
     ok: 'bg-ok-soft text-ok',
@@ -172,19 +176,51 @@ export function Badge({ tone = 'neutral', children }: { tone?: 'neutral' | 'ok' 
     skip: 'bg-skip-soft text-skip',
     accent: 'bg-accent-soft text-accent',
   }
-  return <span className={cx('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold', tones[tone])}>{children}</span>
+  return <span className={cx('inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold', tones[tone])}>{children}</span>
 }
 
-export function ProgressBar({ value, max, label }: { value: number; max: number; label: string }) {
+export function ProgressBar({ value, max, label, className }: { value: number; max: number; label: string; className?: string }) {
   const pct = max ? Math.round((value / max) * 100) : 0
   return (
-    <div role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemin={0} aria-valuemax={max} className="h-2 rounded-full bg-surface-2 overflow-hidden">
-      <div className="h-full bg-accent transition-[width]" style={{ width: `${pct}%` }} />
+    <div
+      role="progressbar"
+      aria-label={label}
+      aria-valuenow={value}
+      aria-valuemin={0}
+      aria-valuemax={max}
+      className={cx('h-2 rounded-full bg-surface-2 overflow-hidden', className)}
+    >
+      <div className="h-full rounded-full bg-brand transition-[width] duration-500" style={{ width: `${pct}%` }} />
     </div>
   )
 }
 
-/** Sticky screen header with optional back action and right-side slot. */
+/** Circular progress indicator with a centred label. */
+export function ProgressRing({ value, max, size = 56, children }: { value: number; max: number; size?: number; children?: ReactNode }) {
+  const r = (size - 8) / 2
+  const c = 2 * Math.PI * r
+  const pct = max ? value / max : 0
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
+        <circle cx={size / 2} cy={size / 2} r={r} strokeWidth="6" className="fill-none stroke-surface-2" />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - pct)}
+          className="fill-none stroke-accent transition-[stroke-dashoffset] duration-500"
+        />
+      </svg>
+      <div className="absolute inset-0 grid place-items-center text-xs font-bold tabular-nums">{children}</div>
+    </div>
+  )
+}
+
+/** Sticky, translucent screen header with optional back action and right-side slot. */
 export function Header({
   title,
   subtitle,
@@ -199,16 +235,17 @@ export function Header({
   right?: ReactNode
 }) {
   return (
-    <header className="sticky top-0 z-20 bg-bg/95 backdrop-blur border-b border-line">
+    <header className="sticky top-0 z-20 bg-bg/80 backdrop-blur-xl border-b border-line/60">
       <div className="mx-auto max-w-2xl flex items-center gap-2 px-3 py-2 min-h-14">
         {onBack && (
-          <Button variant="ghost" onClick={onBack} aria-label={backLabel} className="px-2 -ml-1">
-            <span aria-hidden="true" className="text-xl leading-none">‹</span>
-            <span className="sr-only sm:not-sr-only">{backLabel}</span>
+          <Button variant="ghost" onClick={onBack} aria-label={backLabel} className="px-2.5 -ml-1">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
           </Button>
         )}
         <div className="flex-1 min-w-0">
-          <h1 className="text-base font-bold truncate">{title}</h1>
+          <h1 className="text-base font-bold tracking-tight truncate">{title}</h1>
           {subtitle && <div className="text-xs text-muted truncate">{subtitle}</div>}
         </div>
         {right}

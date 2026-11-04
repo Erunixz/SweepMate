@@ -1,106 +1,140 @@
-import { cleanText, generateReport, generateSweepParagraph } from './report'
-import { getReportRoute, getRoute } from './route'
-import { createNote, createShift, setEntry, updateSweep, upsertNote } from './shift'
+import { cleanText, generateReport, generateSweepSection } from './report'
+import { getRoute } from './route'
+import { createNote, setEntry, updateBuildingSweep, updateSweep, upsertNote } from './shift'
+import { testShift } from './testShift'
 import type { LocationEntry, Shift } from './types'
 
 const ans = (count: number, observation = ''): LocationEntry => ({ state: 'answered', count, observation, updatedAt: '' })
 
-function shiftWith(): Shift {
-  return createShift({
-    date: '2026-11-04',
-    type: 'weekday',
-    startTime: '19:00',
-    endTime: '03:00',
-    caNames: ['Alex', 'Jordan'],
-    partners: [],
-    startingBuildingId: 'lp',
-    sweepTimes: ['20:00', '22:00', '00:00'],
-  })
+/** October 29, 9:00 PM Woodstock counts from the real notes (used only as test data). */
+const OCT29_WOODSTOCK: Record<string, number> = {
+  'f6-common': 1,
+  'f5-common': 1,
+  'f4-common': 0,
+  'f3-common': 4,
+  'f2-common': 1,
+  'f1-common': 6,
+  'north-kitchen': 0,
+  'study-101e': 4,
+  'study-101c': 7,
+  laundry: 0,
+  games: 9,
 }
 
-function fillAll(s: Shift, sweepId: string, buildingId: string, value = 1): Shift {
-  for (const loc of getRoute(buildingId)) {
-    const e: LocationEntry = loc.kind === 'status' ? { state: 'answered', status: 'Locked', observation: '', updatedAt: '' } : ans(value)
-    s = setEntry(s, sweepId, buildingId, loc.id, e)
-  }
-  return s
-}
-
-it('builds a header with shift details and staff, and never invents partners', () => {
-  const r = generateReport(shiftWith())
-  expect(r).toMatch(/^Coverage Report - Wednesday, November 4, 2026 \(Weekday shift, 19:00-03:00\)/)
-  expect(r).toContain('CAs on shift: Alex, Jordan. Partners: none listed.')
-})
-
-it('distinguishes zero, not checked and unanswered locations', () => {
-  let s = shiftWith()
+function withWoodstock(s: Shift): Shift {
   const sweep = s.sweeps[0]!.id
-  const [a, b] = getRoute('woodstock')
-  s = setEntry(s, sweep, 'woodstock', a!.id, ans(0))
-  s = setEntry(s, sweep, 'woodstock', b!.id, { state: 'skipped', observation: '', updatedAt: '' })
-  const p = generateSweepParagraph(s, 0)
-  expect(p).toContain(`${a!.label} 0`)
-  expect(p).toContain(`${b!.label} not checked`)
-  expect(p).toContain(`${getRoute('woodstock')[2]!.label} [not recorded]`)
-  expect(p).toMatch(/Woodstock \(incomplete - 2 of \d+ recorded\)/)
-  // LP has nothing recorded at all.
-  expect(p).toContain('LP: [not recorded].')
+  for (const [id, n] of Object.entries(OCT29_WOODSTOCK)) s = setEntry(s, sweep, 'woodstock', id, ans(n))
+  return updateBuildingSweep(s, sweep, 'woodstock', (b) => ({ ...b, actualStart: '21:00', actualEnd: '21:24' }))
+}
+
+it('reproduces the October 29 Woodstock section in the template format', () => {
+  const section = generateSweepSection(withWoodstock(testShift()), 0)
+  expect(section).toContain(
+    [
+      '9:00 PM',
+      '',
+      'Woodstock',
+      'Start time: 9:00 PM',
+      'CAs: Erfan and Jacob',
+      '',
+      '6: 1 in common room.',
+      '5: 1 in common room.',
+      '4: 0 in common room.',
+      '3: 4 in common room.',
+      '2: 1 in common room.',
+      '1: 6 in common room.',
+      '',
+      '1st-floor north kitchen: 0.',
+      'Study room 101E: 4.',
+      'Study room 101C: 7.',
+      'Laundry room: 0.',
+      'Games room: 9.',
+      '',
+      'End time: 9:24 PM',
+    ].join('\n'),
+  )
 })
 
-it('uses report order, not walking order, for LP', () => {
-  let s = shiftWith()
-  s = fillAll(s, s.sweeps[0]!.id, 'lp')
-  const p = generateSweepParagraph(s, 0)
-  const labels = getReportRoute('lp').map((l) => l.label)
-  const positions = labels.map((l) => p.indexOf(`${l} `))
-  expect(positions.every((pos) => pos >= 0)).toBe(true)
-  expect([...positions].sort((x, y) => x - y)).toEqual(positions)
-  // Floor 5 is walked North→South but reported South→North.
-  expect(p.indexOf('Floor 5 South lounge')).toBeLessThan(p.indexOf('Floor 5 North lounge'))
-  expect(p).toContain('B103 Locked')
+it('reports Les Prince north-first on every floor, regardless of walking direction', () => {
+  let s = testShift()
+  const sweep = s.sweeps[0]!.id
+  getRoute('lp').forEach((loc, i) => (s = setEntry(s, sweep, 'lp', loc.id, ans(i))))
+  const n = (id: string) => getRoute('lp').findIndex((l) => l.id === id)
+  const section = generateSweepSection(s, 0)
+  for (const f of ['6', '5', '4', '3', '2']) {
+    expect(section).toContain(
+      `${f}: ${n(`f${f}-north-study`)} in north study room; ${n(`f${f}-north-kitchen`)} in north kitchen; ` +
+        `${n(`f${f}-south-study`)} in south study room; ${n(`f${f}-south-kitchen`)} in south kitchen.`,
+    )
+  }
+  expect(section).toContain(`1: ${n('f1-study')} in study room; ${n('f1-kitchen')} in kitchen.`)
+  expect(section).toContain(`Games room: ${n('games')}.\nLaundry room: ${n('laundry')}.`)
+  // Floors are separated by blank lines, and Les Prince follows Woodstock.
+  expect(section).toMatch(/south kitchen\.\n\n5: /)
+  expect(section.indexOf('Woodstock')).toBeLessThan(section.indexOf('Les Prince'))
 })
 
-it('includes actual times, observations, missed and empty sweeps', () => {
-  let s = shiftWith()
-  const [first, second] = s.sweeps
-  s = fillAll(s, first!.id, 'woodstock')
-  s = fillAll(s, first!.id, 'lp')
-  const loc = getRoute('woodstock')[0]!
-  s = setEntry(s, first!.id, 'woodstock', loc.id, ans(3, 'Loud music.\nAsked to lower volume'))
-  s = updateSweep(s, first!.id, { actualStart: '20:02', actualEnd: '20:44' })
-  s = updateSweep(s, second!.id, { missed: true, missedReason: 'Responding to a call' })
+it('labels unanswered, Not Checked, missing times and CAs instead of inventing them', () => {
+  let s = testShift({ buildingCAs: {} })
+  s = setEntry(s, s.sweeps[0]!.id, 'woodstock', 'f6-common', { state: 'skipped', observation: '', updatedAt: '' })
+  const section = generateSweepSection(s, 0)
+  expect(section).toContain('6: [not checked] in common room.')
+  expect(section).toContain('5: [not recorded] in common room.')
+  expect(section).toContain('Start time: [not recorded]')
+  expect(section).toContain('CAs: [not recorded]')
+  expect(section).toContain('End time: [not recorded]')
+  expect(section).not.toMatch(/: 0[ .]/)
+})
+
+it('builds the full report: sweeps list, coverage notes, every sweep and Extra Notes', () => {
+  let s = withWoodstock(testShift())
+  s = updateSweep(s, s.sweeps[1]!.id, { missed: true, missedReason: 'Responding to a call' })
+  s = { ...s, extraNotes: 'Quiet night overall.\n\n' }
+  s = upsertNote(s, createNote('general', { time: '21:10', location: 'Woodstock', description: 'B103 open' }))
+  s = upsertNote(
+    s,
+    createNote('work-order', { time: '00:15', location: 'Les Prince Floor 3', description: 'Ceiling leak', action: 'Placed bucket', contacts: 'Facilities' }),
+  )
   const r = generateReport(s)
-  expect(r).toContain('Sweep 1 (20:00; 20:02-20:44):')
-  expect(r).toContain(`Observations: ${loc.label} - Loud music. Asked to lower volume.`)
-  expect(r).toContain('Sweep 2 (22:00): Not completed - Responding to a call.')
-  expect(r).toContain('Sweep 3 (00:00): No data recorded.')
-  expect(r).not.toMatch(/incomplete/)
+
+  expect(
+    r.startsWith(
+      'SWEEPS:\n9:00 PM, 11:00 PM, 1:00 AM\n\nNOTES:\nCoverage date: October 29, 2026\nCoverage phone pick up: 8:50 PM\nStart: 9:00 PM\n\n9:00 PM\n\nWoodstock',
+    ),
+  ).toBe(true)
+  expect(r).toContain('11:00 PM\n\nSweep not completed: Responding to a call.')
+  expect(r).toContain('1:00 AM\n\nWoodstock\nStart time: [not recorded]')
+  expect(r).toContain(
+    [
+      'Extra Notes:',
+      'Quiet night overall.',
+      '9:10 PM — Woodstock — B103 open.',
+      '12:15 AM — Les Prince Floor 3 — Maintenance: Ceiling leak. Actions taken: Placed bucket. Contacted: Facilities. Status: observed, work order not yet submitted.',
+    ].join('\n'),
+  )
 })
 
-it('does not claim a missed sweep has a reason when none was given', () => {
-  let s = shiftWith()
-  s = updateSweep(s, s.sweeps[0]!.id, { missed: true })
-  expect(generateSweepParagraph(s, 0)).toBe('Sweep 1 (20:00): Not completed - reason not recorded.')
-})
-
-it('lists work orders, incidents and follow-ups with accurate status wording', () => {
-  let s = shiftWith()
-  s = upsertNote(s, createNote('work-order', { time: '21:10', location: 'WS Laundry', description: 'Washer leaking', sweepId: s.sweeps[0]!.id }))
-  s = upsertNote(s, createNote('ir', { time: '00:15', description: 'Noise complaint', action: 'Spoke with residents', reference: '' }))
-  s = upsertNote(s, createNote('follow-up', { time: '23:00', description: 'Check lounge lock' }))
+it('only says something was submitted or filed when recorded that way', () => {
+  let s = testShift()
+  s = upsertNote(s, createNote('ir', { time: '23:30', description: 'Noise complaint', reference: '1234', status: 'filed' }))
+  s = upsertNote(s, createNote('soc', { time: '23:45', description: 'Check-in' }))
   const r = generateReport(s)
-  expect(r).toContain('Maintenance / work orders:\n- 21:10, Sweep 1, WS Laundry: Washer leaking. Status: observed, work order not yet submitted.')
-  expect(r).toContain('Incidents (IR/SOC):\n- IR 00:15: Noise complaint. Action: Spoke with residents. Status: IR not yet filed.')
-  expect(r).toContain('Follow-up:\n- 23:00: Check lounge lock. Status: open.')
-  expect(r).not.toContain('Other notes:')
+  expect(r).toContain('IR: Noise complaint. Ref #1234. Status: IR filed.')
+  expect(r).toContain('SOC: Check-in. Status: SOC not yet filed.')
 })
 
-it('marks demo reports and produces clean plain text', () => {
-  const s = { ...shiftWith(), isDemo: true }
-  const r = generateReport(s)
+it('includes per-location observations without changing counts', () => {
+  let s = withWoodstock(testShift())
+  s = setEntry(s, s.sweeps[0]!.id, 'woodstock', 'games', ans(9, 'Loud music.\nAsked to lower volume'))
+  expect(generateSweepSection(s, 0)).toContain('Games room: 9.\n\nGames room: Loud music. Asked to lower volume.\n\nEnd time')
+})
+
+it('says "None." when there are no extra notes, marks demos, and outputs clean text', () => {
+  const r = generateReport({ ...testShift(), isDemo: true })
   expect(r.startsWith('[DEMO')).toBe(true)
+  expect(r).toContain('Extra Notes:\nNone.')
   expect(r).not.toMatch(/[ \t]+\n/)
   expect(r).not.toMatch(/\n{3,}/)
   expect(r.endsWith('\n')).toBe(true)
-  expect(cleanText('a  \r\n\r\n\r\n\u200Bb')).toBe('a\n\nb\n')
+  expect(cleanText('a  \r\n\r\n\r\nb')).toBe('a\n\nb\n')
 })

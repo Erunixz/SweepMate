@@ -1,20 +1,22 @@
 import { useState } from 'react'
+import { Icon } from '../components/Icon'
 import { LoadProblemBanner } from '../components/LoadProblemBanner'
-import { ThemeToggle } from '../components/ThemeToggle'
 import { ConfirmSheet } from '../components/Sheet'
-import { Badge, Button, Card, Page } from '../components/ui'
-import { SHIFT_TEMPLATES } from '../config/schedules'
+import { ThemeToggle } from '../components/ThemeToggle'
+import { Badge, Button, Eyebrow, Page, ProgressRing } from '../components/ui'
+import { SHIFT_TYPE_LABELS } from '../config/schedules'
 import { sweepProgress } from '../domain/progress'
+import { caPool } from '../domain/shift'
 import { formatDateShort } from '../domain/time'
 import type { Shift } from '../domain/types'
 import { useStore } from '../state/store'
 
+function sweepsDone(shift: Shift) {
+  return shift.sweeps.filter((s) => s.missed || sweepProgress(shift, s).unanswered === 0).length
+}
+
 function shiftSummary(shift: Shift) {
-  const done = shift.sweeps.filter((s) => {
-    const p = sweepProgress(shift, s)
-    return s.missed || p.unanswered === 0
-  }).length
-  return `${SHIFT_TEMPLATES[shift.type].label} · ${shift.caNames.join(', ') || 'No CA names'} · ${done}/${shift.sweeps.length} sweeps`
+  return `${SHIFT_TYPE_LABELS[shift.type]} · ${caPool(shift).join(', ') || 'No CA names'}`
 }
 
 export function Welcome() {
@@ -25,38 +27,65 @@ export function Welcome() {
   const latest = unfinished[0]
 
   return (
-    <Page className="min-h-dvh justify-center py-8">
-      <div className="flex justify-end">
+    <Page className="min-h-dvh py-6 gap-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div aria-hidden="true" className="size-8 rounded-xl bg-brand grid place-items-center text-white">
+            <Icon name="sweeps" size={18} />
+          </div>
+          <span className="font-bold tracking-tight">SweepMate</span>
+        </div>
         <ThemeToggle />
       </div>
-      <LoadProblemBanner />
-      <div className="text-center flex flex-col gap-2 py-6">
-        <div aria-hidden="true" className="mx-auto size-16 rounded-2xl bg-accent text-accent-fg grid place-items-center text-3xl font-black">
-          S
-        </div>
-        <h1 className="text-3xl font-bold tracking-tight">SweepMate</h1>
-        <p className="text-muted">Guided residence sweeps, counts, notes and coverage reports.</p>
-      </div>
 
-      <div className="flex flex-col gap-3">
-        <Button variant="primary" size="lg" onClick={() => navigate({ name: 'setup', mode: 'new' })}>
-          Start Shift
-        </Button>
-        <Button size="lg" disabled={!latest} onClick={() => latest && openShift(latest)}>
-          {latest ? `Resume Shift – ${formatDateShort(latest.date)}` : 'Resume Shift (none in progress)'}
-        </Button>
-      </div>
+      <LoadProblemBanner />
+
+      <section className="pt-6 pb-2 flex flex-col gap-3">
+        <h1 className="text-4xl font-extrabold tracking-tight leading-[1.05]">
+          Sweeps done.
+          <br />
+          <span className="text-brand">Report ready.</span>
+        </h1>
+        <p className="text-muted text-base max-w-sm">Walk the route, tap the counts, and paste a finished coverage report at the end of the night.</p>
+      </section>
+
+      {latest && (
+        <button
+          type="button"
+          onClick={() => openShift(latest)}
+          aria-label={`Resume Shift – ${formatDateShort(latest.date)}`}
+          className="group flex items-center gap-4 rounded-3xl bg-surface border border-line/70 shadow-card p-4 text-left transition hover:border-accent/50 active:scale-[0.99]"
+        >
+          <ProgressRing value={sweepsDone(latest)} max={latest.sweeps.length || 1}>
+            {sweepsDone(latest)}/{latest.sweeps.length}
+          </ProgressRing>
+          <span className="flex-1 min-w-0">
+            <Eyebrow className="text-accent">In progress</Eyebrow>
+            <span className="block text-lg font-bold tracking-tight">{formatDateShort(latest.date)}</span>
+            <span className="block text-sm text-muted truncate">{shiftSummary(latest)}</span>
+          </span>
+          <span className="size-10 rounded-full bg-accent-soft text-accent grid place-items-center transition group-hover:translate-x-0.5">
+            <Icon name="chevron" />
+          </span>
+        </button>
+      )}
+
+      <Button variant={latest ? 'secondary' : 'primary'} size="lg" onClick={() => navigate({ name: 'setup', mode: 'new' })}>
+        <Icon name="plus" />
+        Start Shift
+      </Button>
 
       {unfinished.length > 1 && <ShiftList title="Other unfinished shifts" shifts={unfinished.slice(1)} onDelete={setToDelete} />}
-      {finished.length > 0 && <ShiftList title="Finished shifts" shifts={finished} onDelete={setToDelete} />}
+      {finished.length > 0 && <ShiftList title="Past shifts" shifts={finished} onDelete={setToDelete} />}
 
-      <div className="flex flex-col items-center gap-1 text-center">
-        <Button variant="ghost" onClick={startDemo}>
+      <div className="mt-auto flex flex-col items-center gap-1 text-center pt-4">
+        <Button variant="ghost" size="sm" onClick={startDemo}>
+          <Icon name="sparkle" size={16} />
           {demo ? 'Open demo shift' : 'Try a demo shift'}
         </Button>
-        <p className="text-xs text-muted">Fictional data, stored separately from real shifts.</p>
+        <p className="text-xs text-muted">Fictional data, kept separate from real shifts.</p>
         {demo && (
-          <Button variant="ghost" className="text-xs text-danger min-h-9" onClick={() => setToDelete(demo)}>
+          <Button variant="ghost" size="sm" className="text-xs text-danger" onClick={() => setToDelete(demo)}>
             Delete demo shift
           </Button>
         )}
@@ -68,8 +97,8 @@ export function Welcome() {
         message={
           toDelete && (
             <p>
-              This permanently deletes the shift on <strong>{formatDateShort(toDelete.date)}</strong> including all counts,
-              notes and report edits. This can't be undone.
+              This permanently deletes the shift on <strong>{formatDateShort(toDelete.date)}</strong> including all counts, notes and
+              report edits. This can't be undone.
             </p>
           )
         }
@@ -84,23 +113,25 @@ export function Welcome() {
 function ShiftList({ title, shifts, onDelete }: { title: string; shifts: Shift[]; onDelete: (s: Shift) => void }) {
   const { openShift } = useStore()
   return (
-    <Card className="flex flex-col gap-2">
-      <h2 className="text-sm font-bold text-muted">{title}</h2>
-      <ul className="flex flex-col divide-y divide-line">
+    <section className="flex flex-col gap-2">
+      <Eyebrow className="px-1">{title}</Eyebrow>
+      <ul className="rounded-3xl bg-surface border border-line/70 shadow-card divide-y divide-line/70 overflow-hidden">
         {shifts.map((s) => (
-          <li key={s.id} className="flex items-center gap-2 py-2">
-            <button type="button" onClick={() => openShift(s)} className="flex-1 text-left min-h-11 rounded-lg px-1 hover:bg-surface-2">
-              <div className="font-semibold">
+          <li key={s.id} className="flex items-center gap-1 pr-2">
+            <button type="button" onClick={() => openShift(s)} className="flex-1 min-w-0 text-left min-h-14 px-4 py-2.5 hover:bg-surface-2">
+              <span className="flex items-center gap-2 font-semibold">
                 {formatDateShort(s.date)} {s.finished && <Badge tone="ok">Finished</Badge>}
-              </div>
-              <div className="text-xs text-muted">{shiftSummary(s)}</div>
+              </span>
+              <span className="block text-xs text-muted truncate">
+                {shiftSummary(s)} · {sweepsDone(s)}/{s.sweeps.length} sweeps
+              </span>
             </button>
-            <Button variant="ghost" onClick={() => onDelete(s)} aria-label={`Delete shift on ${formatDateShort(s.date)}`} className="text-danger">
+            <Button variant="ghost" size="sm" onClick={() => onDelete(s)} aria-label={`Delete shift on ${formatDateShort(s.date)}`} className="text-danger">
               Delete
             </Button>
           </li>
         ))}
       </ul>
-    </Card>
+    </section>
   )
 }

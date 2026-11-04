@@ -1,4 +1,6 @@
 import { getRoute, walkingBuildingOrder } from './route'
+import { sweepBuildingCAs } from './shift'
+import { formatTime12 } from './time'
 import type { RouteLocation, Shift, Sweep } from './types'
 
 export interface Progress {
@@ -53,6 +55,24 @@ export interface MissingGroup {
   sweepNumber: number
   buildingId: string
   locations: RouteLocation[]
+}
+
+/** Shift and building details the report needs but that haven't been recorded. */
+export function missingDetails(shift: Shift): string[] {
+  const out: string[] = []
+  if (!shift.phonePickup) out.push('Coverage phone pick-up time')
+  if (shift.sweeps.length === 0) out.push('Scheduled sweep times')
+  shift.sweeps.forEach((sweep) => {
+    if (sweep.missed) return
+    for (const b of walkingBuildingOrder(shift.startingBuildingId)) {
+      const bs = sweep.buildings[b.id]
+      const label = `${formatTime12(sweep.scheduledTime)} ${b.name}`
+      if (!bs?.actualStart) out.push(`${label}: start time`)
+      if (!bs?.actualEnd) out.push(`${label}: end time`)
+      if (!sweepBuildingCAs(shift, sweep, b.id).length) out.push(`${label}: CAs`)
+    }
+  })
+  return out
 }
 
 /**

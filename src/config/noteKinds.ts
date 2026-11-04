@@ -14,9 +14,9 @@ export interface NoteKindMeta {
  * saving a note in SweepMate never submits anything.
  */
 export const NOTE_KINDS: Record<NoteKind, NoteKindMeta> = {
-  general: { label: 'General note', short: 'Note', hasReference: false, statuses: [] },
+  general: { label: 'General observation', short: 'Observation', hasReference: false, statuses: [] },
   'work-order': {
-    label: 'Maintenance / work order',
+    label: 'Maintenance issue / work order',
     short: 'Maintenance',
     hasReference: true,
     statuses: [
@@ -26,7 +26,7 @@ export const NOTE_KINDS: Record<NoteKind, NoteKindMeta> = {
     ],
   },
   ir: {
-    label: 'Incident report (IR)',
+    label: 'Incident Report (IR)',
     short: 'IR',
     hasReference: true,
     statuses: [
@@ -35,7 +35,7 @@ export const NOTE_KINDS: Record<NoteKind, NoteKindMeta> = {
     ],
   },
   soc: {
-    label: 'SOC',
+    label: 'Student of Concern (SOC)',
     short: 'SOC',
     hasReference: true,
     statuses: [
@@ -44,7 +44,7 @@ export const NOTE_KINDS: Record<NoteKind, NoteKindMeta> = {
     ],
   },
   'follow-up': {
-    label: 'Follow-up item',
+    label: 'Outstanding follow-up',
     short: 'Follow-up',
     hasReference: false,
     statuses: [

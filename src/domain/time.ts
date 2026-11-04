@@ -74,7 +74,20 @@ export function formatDateShort(d: string): string {
   return parseDate(d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-/** "00:30" → "00:30 (+1)" when it falls after midnight relative to the shift start. */
+/** "21:00" → "9:00 PM", "00:30" → "12:30 AM". Empty or invalid input returns ''. */
+export function formatTime12(t: string): string {
+  if (!isValidTime(t)) return ''
+  const [h = 0, m = 0] = t.split(':').map(Number)
+  return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`
+}
+
+/** 12-hour time, marked "(next day)" when it falls after midnight relative to the shift start. */
 export function labelShiftTime(shiftStart: string, t: string): string {
-  return isNextDay(shiftStart, t) ? `${t} (+1)` : t
+  return isNextDay(shiftStart, t) ? `${formatTime12(t)} (next day)` : formatTime12(t)
+}
+
+/** "Erfan and Jacob", "A, B and C". */
+export function joinNames(names: string[]): string {
+  if (names.length <= 2) return names.join(' and ')
+  return `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`
 }

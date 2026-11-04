@@ -1,38 +1,54 @@
 /** Pure, immutable operations on shifts. Every function returns a new Shift. */
 import { newId } from './ids'
 import { minutesIntoShift } from './time'
-import type { LocationEntry, Note, NoteKind, Shift, ShiftType, Sweep } from './types'
+import type { BuildingSweep, LocationEntry, Note, NoteKind, Shift, ShiftType, Sweep } from './types'
 
-export interface NewShiftInput {
+export interface ShiftDetails {
   date: string
   type: ShiftType
+  phonePickup: string
   startTime: string
   endTime: string
-  caNames: string[]
-  partners: string[]
+  myName: string
+  otherCAs: string[]
+  buildingCAs: Record<string, string[]>
   startingBuildingId: string
+}
+
+export interface NewShiftInput extends ShiftDetails {
   sweepTimes: string[]
   isDemo?: boolean
 }
 
 export function createSweep(scheduledTime: string): Sweep {
-  return { id: newId(), scheduledTime, actualStart: '', actualEnd: '', missed: false, missedReason: '', buildings: {} }
+  return { id: newId(), scheduledTime, missed: false, missedReason: '', buildings: {} }
+}
+
+export function emptyBuildingSweep(): BuildingSweep {
+  return { entries: {}, actualStart: '', actualEnd: '', cas: null }
+}
+
+const clean = (names: string[]) => names.map((n) => n.trim()).filter(Boolean)
+
+function cleanDetails(d: ShiftDetails): ShiftDetails {
+  return {
+    ...d,
+    myName: d.myName.trim(),
+    otherCAs: clean(d.otherCAs),
+    buildingCAs: Object.fromEntries(Object.entries(d.buildingCAs).map(([b, names]) => [b, clean(names)])),
+  }
 }
 
 export function createShift(input: NewShiftInput, now = new Date()): Shift {
   const ts = now.toISOString()
+  const { sweepTimes, isDemo, ...details } = input
   const shift: Shift = {
     id: newId(),
-    isDemo: input.isDemo ?? false,
-    date: input.date,
-    type: input.type,
-    startTime: input.startTime,
-    endTime: input.endTime,
-    caNames: clean(input.caNames),
-    partners: clean(input.partners),
-    startingBuildingId: input.startingBuildingId,
+    isDemo: isDemo ?? false,
+    ...cleanDetails(details),
     sweeps: [],
     notes: [],
+    extraNotes: '',
     finished: false,
     reportDraft: null,
     createdAt: ts,
@@ -40,28 +56,31 @@ export function createShift(input: NewShiftInput, now = new Date()): Shift {
   }
   return applySchedule(
     shift,
-    input.sweepTimes.map((time) => ({ time })),
+    sweepTimes.map((time) => ({ time })),
   )
 }
-
-const clean = (names: string[]) => names.map((n) => n.trim()).filter(Boolean)
 
 function touch(shift: Shift): Shift {
   return { ...shift, updatedAt: new Date().toISOString() }
 }
 
-export type ShiftDetails = Pick<
-  Shift,
-  'date' | 'type' | 'startTime' | 'endTime' | 'caNames' | 'partners' | 'startingBuildingId'
->
-
 export function updateDetails(shift: Shift, details: ShiftDetails): Shift {
-  return touch({ ...shift, ...details, caNames: clean(details.caNames), partners: clean(details.partners) })
+  return touch({ ...shift, ...cleanDetails(details) })
+}
+
+/** Everyone on coverage: my name followed by the other CAs. */
+export function caPool(shift: Pick<Shift, 'myName' | 'otherCAs'>): string[] {
+  return clean([shift.myName, ...shift.otherCAs]).filter((n, i, all) => all.indexOf(n) === i)
+}
+
+/** CAs who swept a building in a sweep: the per-sweep override, else the shift default. */
+export function sweepBuildingCAs(shift: Shift, sweep: Sweep, buildingId: string): string[] {
+  return sweep.buildings[buildingId]?.cas ?? shift.buildingCAs[buildingId] ?? []
 }
 
 /**
  * Replace the sweep schedule. Rows with an `id` keep that sweep's recorded data;
- * rows without one become new sweeps. Sweeps are ordered by time within the shift.
+ * rows without one become new, empty sweeps. Sweeps are ordered by time within the shift.
  */
 export function applySchedule(shift: Shift, rows: { id?: string; time: string }[]): Shift {
   const existing = new Map(shift.sweeps.map((s) => [s.id, s]))
@@ -79,8 +98,24 @@ export function applySchedule(shift: Shift, rows: { id?: string; time: string }[
   return touch({ ...shift, sweeps, notes })
 }
 
-export function updateSweep(shift: Shift, sweepId: string, patch: Partial<Omit<Sweep, 'id' | 'buildings'>>): Shift {
+export function updateSweep(shift: Shift, sweepId: string, patch: Partial<Pick<Sweep, 'missed' | 'missedReason'>>): Shift {
   return touch({ ...shift, sweeps: shift.sweeps.map((s) => (s.id === sweepId ? { ...s, ...patch } : s)) })
+}
+
+export function updateBuildingSweep(
+  shift: Shift,
+  sweepId: string,
+  buildingId: string,
+  fn: (b: BuildingSweep) => BuildingSweep,
+): Shift {
+  return touch({
+    ...shift,
+    sweeps: shift.sweeps.map((s) =>
+      s.id === sweepId
+        ? { ...s, buildings: { ...s.buildings, [buildingId]: fn(s.buildings[buildingId] ?? emptyBuildingSweep()) } }
+        : s,
+    ),
+  })
 }
 
 export function getEntry(
@@ -100,15 +135,11 @@ export function setEntry(
   locationId: string,
   entry: LocationEntry | null,
 ): Shift {
-  return touch({
-    ...shift,
-    sweeps: shift.sweeps.map((s) => {
-      if (s.id !== sweepId) return s
-      const entries = { ...(s.buildings[buildingId]?.entries ?? {}) }
-      if (entry) entries[locationId] = entry
-      else delete entries[locationId]
-      return { ...s, buildings: { ...s.buildings, [buildingId]: { entries } } }
-    }),
+  return updateBuildingSweep(shift, sweepId, buildingId, (b) => {
+    const entries = { ...b.entries }
+    if (entry) entries[locationId] = entry
+    else delete entries[locationId]
+    return { ...b, entries }
   })
 }
 

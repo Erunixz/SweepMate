@@ -2,7 +2,7 @@
  * Local persistence. Real shifts and the demo shift live under separate keys so fictional
  * data can never mix with real records. Damaged data is backed up, never silently discarded.
  */
-import { SHIFT_TEMPLATES } from '../config/schedules'
+import { DEFAULT_SCHEDULES } from '../config/schedules'
 import type { Note, Shift, Sweep } from './types'
 
 export const SHIFTS_KEY = 'sweepmate:v1:shifts'
@@ -51,14 +51,17 @@ function normalizeSweep(v: unknown): Sweep | null {
           updatedAt: isStr(e.updatedAt) ? e.updatedAt : '',
         }
       }
-      buildings[bid] = { entries }
+      buildings[bid] = {
+        entries,
+        actualStart: isStr(b.actualStart) ? b.actualStart : '',
+        actualEnd: isStr(b.actualEnd) ? b.actualEnd : '',
+        cas: Array.isArray(b.cas) ? b.cas.filter(isStr) : null,
+      }
     }
   }
   return {
     id: v.id,
     scheduledTime: v.scheduledTime,
-    actualStart: isStr(v.actualStart) ? v.actualStart : '',
-    actualEnd: isStr(v.actualEnd) ? v.actualEnd : '',
     missed: v.missed === true,
     missedReason: isStr(v.missedReason) ? v.missedReason : '',
     buildings,
@@ -90,23 +93,30 @@ function normalizeNote(v: unknown): Note | null {
 /** Validate and fill defaults for a stored shift. Returns null if it can't be trusted. */
 export function normalizeShift(v: unknown): Shift | null {
   if (!isObj(v) || !isStr(v.id) || !isStr(v.date) || !isStr(v.startTime) || !Array.isArray(v.sweeps)) return null
-  const type = isStr(v.type) && v.type in SHIFT_TEMPLATES ? (v.type as Shift['type']) : 'weekday'
+  const type = isStr(v.type) && v.type in DEFAULT_SCHEDULES ? (v.type as Shift['type']) : 'weekday'
   const sweeps = v.sweeps.map(normalizeSweep)
   if (sweeps.some((s) => s === null)) return null
   const notes = Array.isArray(v.notes) ? v.notes.map(normalizeNote).filter((n): n is Note => n !== null) : []
   const names = (x: unknown) => (Array.isArray(x) ? x.filter(isStr) : [])
+  // Older saves stored caNames/partners instead of myName/otherCAs.
+  const legacy = names(v.caNames)
+  const buildingCAs: Record<string, string[]> = {}
+  if (isObj(v.buildingCAs)) for (const [b, n] of Object.entries(v.buildingCAs)) buildingCAs[b] = names(n)
   return {
     id: v.id,
     isDemo: v.isDemo === true,
     date: v.date,
     type,
+    phonePickup: isStr(v.phonePickup) ? v.phonePickup : '',
     startTime: v.startTime,
-    endTime: isStr(v.endTime) ? v.endTime : SHIFT_TEMPLATES[type].end,
-    caNames: names(v.caNames),
-    partners: names(v.partners),
+    endTime: isStr(v.endTime) ? v.endTime : DEFAULT_SCHEDULES[type].end,
+    myName: isStr(v.myName) ? v.myName : (legacy[0] ?? ''),
+    otherCAs: Array.isArray(v.otherCAs) ? names(v.otherCAs) : [...legacy.slice(1), ...names(v.partners)],
+    buildingCAs,
     startingBuildingId: isStr(v.startingBuildingId) ? v.startingBuildingId : '',
     sweeps: sweeps as Sweep[],
     notes,
+    extraNotes: isStr(v.extraNotes) ? v.extraNotes : '',
     finished: v.finished === true,
     reportDraft: isStr(v.reportDraft) ? v.reportDraft : null,
     createdAt: isStr(v.createdAt) ? v.createdAt : '',

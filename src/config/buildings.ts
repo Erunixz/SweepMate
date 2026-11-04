@@ -1,53 +1,49 @@
-import type { BuildingConfig } from '../domain/types'
+import type { BuildingConfig, ReportLine } from '../domain/types'
 
 /**
- * Building layouts and walking routes.
- *
- * ⚠ PLACEHOLDER LAYOUTS: the specification's exact Woodstock route and LP floor plan were not
- * available when this was written. Replace the stops/locations below with the real ones —
- * the walkthrough, progress views and report all adapt automatically.
+ * Building layouts, walking routes and report wording.
  *
  * Location ids must be unique within a building and should stay stable once shifts exist,
- * because saved counts are keyed by them.
+ * because saved counts are keyed by them. Les Prince ids are generated as `f{floor}-{id}`
+ * (e.g. `f6-north-study`); its games and laundry rooms keep their plain ids.
+ * The tests check that every route location appears exactly once in `reportBlocks`.
  */
+
+const WOODSTOCK_FLOORS = ['6', '5', '4', '3', '2', '1']
+const LP_WINGED_FLOORS = ['6', '5', '4', '3', '2']
+
+/** Les Prince report lines are always north-first, regardless of walking direction. */
+const lpFloorLine = (floor: string): ReportLine => ({
+  label: floor,
+  items: [
+    { location: `f${floor}-north-study`, text: '{count} in north study room' },
+    { location: `f${floor}-north-kitchen`, text: '{count} in north kitchen' },
+    { location: `f${floor}-south-study`, text: '{count} in south study room' },
+    { location: `f${floor}-south-kitchen`, text: '{count} in south kitchen' },
+  ],
+})
+
 export const BUILDINGS: BuildingConfig[] = [
   {
     id: 'woodstock',
     name: 'Woodstock',
-    shortName: 'WS',
     layout: {
       type: 'sequence',
       stops: [
+        ...WOODSTOCK_FLOORS.map((f) => ({
+          section: `Floor ${f}`,
+          locations: [{ id: `f${f}-common`, label: `Floor ${f} common room` }],
+        })),
         {
-          section: 'Main floor',
+          section: 'First floor',
           locations: [
-            { id: 'lobby', label: 'Lobby' },
-            { id: 'main-lounge', label: 'Main lounge' },
+            { id: 'north-kitchen', label: 'First-floor north kitchen' },
+            { id: 'study-101e', label: 'Study room 101E' },
+            { id: 'study-101c', label: 'Study room 101C' },
           ],
         },
         {
-          section: 'Floor 4',
-          locations: [
-            { id: 'f4-lounge', label: '4th floor lounge' },
-            { id: 'f4-study', label: '4th floor study room' },
-          ],
-        },
-        {
-          section: 'Floor 3',
-          locations: [
-            { id: 'f3-lounge', label: '3rd floor lounge' },
-            { id: 'f3-study', label: '3rd floor study room' },
-          ],
-        },
-        {
-          section: 'Floor 2',
-          locations: [
-            { id: 'f2-lounge', label: '2nd floor lounge' },
-            { id: 'f2-study', label: '2nd floor study room' },
-          ],
-        },
-        {
-          section: 'Basement',
+          section: 'Shared rooms',
           locations: [
             { id: 'laundry', label: 'Laundry room' },
             { id: 'games', label: 'Games room' },
@@ -55,42 +51,68 @@ export const BUILDINGS: BuildingConfig[] = [
         },
       ],
     },
-    reportOrder: 'walking',
+    reportBlocks: [
+      WOODSTOCK_FLOORS.map((f) => ({ label: f, items: [{ location: `f${f}-common`, text: '{count} in common room' }] })),
+      [
+        { label: '1st-floor north kitchen', items: [{ location: 'north-kitchen', text: '{count}' }] },
+        { label: 'Study room 101E', items: [{ location: 'study-101e', text: '{count}' }] },
+        { label: 'Study room 101C', items: [{ location: 'study-101c', text: '{count}' }] },
+        { label: 'Laundry room', items: [{ location: 'laundry', text: '{count}' }] },
+        { label: 'Games room', items: [{ location: 'games', text: '{count}' }] },
+      ],
+    ],
   },
   {
     id: 'lp',
-    name: 'LP',
-    shortName: 'LP',
+    name: 'Les Prince',
     layout: {
       type: 'alternating',
-      floors: ['6', '5', '4', '3', '2', '1'],
+      floors: [...LP_WINGED_FLOORS, '1'],
       wings: [
         { id: 'S', name: 'South' },
         { id: 'N', name: 'North' },
       ],
       floorLocations: [
-        { id: 'south-lounge', label: 'South lounge', wing: 'S' },
-        { id: 'south-hall', label: 'South hallway', wing: 'S' },
-        { id: 'north-hall', label: 'North hallway', wing: 'N' },
-        { id: 'north-lounge', label: 'North lounge', wing: 'N' },
+        { id: 'south-study', label: 'South study room', wing: 'S' },
+        { id: 'south-kitchen', label: 'South kitchen', wing: 'S' },
+        { id: 'north-study', label: 'North study room', wing: 'N' },
+        { id: 'north-kitchen', label: 'North kitchen', wing: 'N' },
       ],
+      // Floor 1 has a single study room and kitchen — no north/south pairs.
+      floorOverrides: {
+        '1': [
+          { id: 'study', label: 'Study room' },
+          { id: 'kitchen', label: 'Kitchen' },
+        ],
+      },
       after: [
         {
-          section: 'Lower level',
+          section: 'Shared rooms',
           locations: [
-            {
-              id: 'b103',
-              label: 'B103',
-              kind: 'status',
-              statusOptions: ['Locked', 'Unlocked – empty', 'Unlocked – in use', 'Door propped open'],
-            },
+            { id: 'games', label: 'Games room' },
+            { id: 'laundry', label: 'Laundry room' },
           ],
         },
       ],
     },
-    reportOrder: 'by-floor',
+    reportBlocks: [
+      ...LP_WINGED_FLOORS.map((f) => [lpFloorLine(f)]),
+      [
+        {
+          label: '1',
+          items: [
+            { location: 'f1-study', text: '{count} in study room' },
+            { location: 'f1-kitchen', text: '{count} in kitchen' },
+          ],
+        },
+      ],
+      [
+        { label: 'Games room', items: [{ location: 'games', text: '{count}' }] },
+        { label: 'Laundry room', items: [{ location: 'laundry', text: '{count}' }] },
+      ],
+    ],
   },
 ]
 
-/** Order buildings appear in the report (independent of the shift's starting building). */
+/** Order buildings appear within each sweep in the report (independent of the starting building). */
 export const REPORT_BUILDING_ORDER: string[] = ['woodstock', 'lp']

@@ -1,14 +1,16 @@
 import { useState } from 'react'
+import { Icon } from '../components/Icon'
 import { LocationCard } from '../components/LocationCard'
 import { NoteSheet } from '../components/NoteSheet'
 import { SaveIndicator } from '../components/SaveIndicator'
 import { Sheet } from '../components/Sheet'
 import { cx } from '../components/cx'
 import { Badge, Button, Card, Header, Page, ProgressBar } from '../components/ui'
-import { buildingProgress, isDone, sweepProgress } from '../domain/progress'
+import { buildingProgress, isDone } from '../domain/progress'
 import { getBuilding, getRoute, walkingBuildingOrder } from '../domain/route'
-import { setEntry, updateSweep } from '../domain/shift'
-import { nowTime } from '../domain/time'
+import { BuildingDetails } from '../components/BuildingDetails'
+import { setEntry, updateBuildingSweep } from '../domain/shift'
+import { formatTime12, nowTime } from '../domain/time'
 import type { LocationEntry, RouteLocation } from '../domain/types'
 import { useActiveShift } from '../state/store'
 
@@ -38,8 +40,9 @@ export function Walkthrough({ sweepId, buildingId, index }: { sweepId: string; b
   const write = (loc: RouteLocation, entry: LocationEntry | null) =>
     updateActive((s) => {
       let next = setEntry(s, sweepId, buildingId, loc.id, entry)
-      // First answer of a sweep fills in the actual start time if it isn't set yet.
-      if (entry && !s.sweeps.find((w) => w.id === sweepId)?.actualStart) next = updateSweep(next, sweepId, { actualStart: nowTime() })
+      // The first answer in this building fills in its start time if it isn't set yet.
+      if (entry && !s.sweeps.find((w) => w.id === sweepId)?.buildings[buildingId]?.actualStart)
+        next = updateBuildingSweep(next, sweepId, buildingId, (b) => ({ ...b, actualStart: nowTime() }))
       return next
     })
 
@@ -51,25 +54,27 @@ export function Walkthrough({ sweepId, buildingId, index }: { sweepId: string; b
     updatedAt: new Date().toISOString(),
   })
 
-  const title = `Sweep ${sweepIndex + 1} · ${building.name}`
+  const title = building.name
 
   return (
     <>
       <Header
         title={title}
-        subtitle={location ? location.section : 'Building summary'}
+        subtitle={`${formatTime12(sweep.scheduledTime)} sweep · ${location ? location.section : 'Building summary'}`}
         onBack={() => navigate({ name: 'overview' })}
         backLabel="Overview"
         right={
           <div className="flex items-center gap-1">
             <SaveIndicator />
-            <Button variant="secondary" onClick={() => setNoteOpen(true)}>
-              + Note
+            <Button variant="secondary" size="sm" onClick={() => setNoteOpen(true)} aria-label="Add note">
+              <Icon name="plus" size={16} />
+              Note
             </Button>
           </div>
         }
       />
       <Page>
+        <BuildingDetails shift={shift} sweep={sweep} buildingId={buildingId} />
         <button
           type="button"
           onClick={() => setJumpOpen(true)}
@@ -208,11 +213,12 @@ function BuildingSummary({ sweepId, buildingId, onJump }: { sweepId: string; bui
   const nextBuilding = walkingBuildingOrder(shift.startingBuildingId).find(
     (b) => b.id !== buildingId && !isDone(buildingProgress(sweep, b.id)),
   )
-  const sweepDone = isDone(sweepProgress(shift, sweep))
+  const bs = sweep.buildings[buildingId]
+  const name = getBuilding(buildingId)?.name
 
   return (
     <Card className="flex flex-col gap-3">
-      <h2 className="text-xl font-bold">{getBuilding(buildingId)?.name} – end of route</h2>
+      <h2 className="text-xl font-bold">{name} – end of route</h2>
       <div className="flex flex-wrap gap-2">
         <Badge tone="ok">{p.answered} answered</Badge>
         {p.skipped > 0 && <Badge tone="skip">{p.skipped} not checked</Badge>}
@@ -223,21 +229,28 @@ function BuildingSummary({ sweepId, buildingId, onJump }: { sweepId: string; bui
           Go to first unanswered location
         </Button>
       )}
-      {nextBuilding && (
+      {!bs?.actualEnd ? (
         <Button
           variant="primary"
+          size="lg"
+          onClick={() => updateActive((s) => updateBuildingSweep(s, sweepId, buildingId, (b) => ({ ...b, actualEnd: nowTime() })))}
+        >
+          Record {name} end time ({formatTime12(nowTime())})
+        </Button>
+      ) : (
+        <p className="text-sm text-muted">
+          {name} ended at {formatTime12(bs.actualEnd)}. Edit times from the details bar above.
+        </p>
+      )}
+      {nextBuilding && (
+        <Button
+          variant={bs?.actualEnd ? 'primary' : 'secondary'}
           size="lg"
           onClick={() => navigate({ name: 'walk', sweepId, buildingId: nextBuilding.id, index: Math.max(0, getRoute(nextBuilding.id).findIndex((l) => !sweep.buildings[nextBuilding.id]?.entries[l.id])) })}
         >
           Continue to {nextBuilding.name} ›
         </Button>
       )}
-      {sweepDone && !sweep.actualEnd && (
-        <Button variant="primary" size="lg" onClick={() => updateActive((s) => updateSweep(s, sweepId, { actualEnd: nowTime() }))}>
-          End sweep now ({nowTime()})
-        </Button>
-      )}
-      {sweepDone && sweep.actualEnd && <p className="text-sm text-muted">Sweep ended at {sweep.actualEnd}. Edit it from the overview.</p>}
       <Button size="lg" onClick={() => navigate({ name: 'overview' })}>
         Back to overview
       </Button>

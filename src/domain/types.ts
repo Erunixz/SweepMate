@@ -2,7 +2,7 @@
 
 export type ShiftType = 'weekday' | 'weekend' | 'peak'
 
-/** "count" locations record an occupancy number; "status" locations pick from a fixed list (e.g. B103). */
+/** "count" locations record an occupancy number; "status" locations pick from a fixed list. */
 export type LocationKind = 'count' | 'status'
 
 /* ---------- Building configuration (editable in src/config/buildings.ts) ---------- */
@@ -31,38 +31,48 @@ export interface SequenceLayout {
   stops: SequenceStop[]
 }
 
-export type WingLocationDef = LocationDef & { wing: string }
+export type FloorLocationDef = LocationDef & { wing?: string }
 
 /**
- * Walk floors top-down, alternating direction each floor:
- * first floor wings[0] → wings[1], next floor wings[1] → wings[0], and so on.
+ * Walk floors top-down. On winged floors the side visited first alternates each floor
+ * (wings[0] first on the top floor), while the order within a side stays the same.
  */
 export interface AlternatingLayout {
   type: 'alternating'
   /** Floors in walking order (descending). */
   floors: string[]
-  /** [first-direction start, end], e.g. [South, North]. */
+  /** wings[0] is walked first on the top floor. */
   wings: [WingDef, WingDef]
-  /** Locations along one floor, ordered from the wings[0] end to the wings[1] end. */
-  floorLocations: WingLocationDef[]
-  /** Optional per-floor replacement for floorLocations. */
-  floorOverrides?: Record<string, WingLocationDef[]>
+  /** Locations on a winged floor, each tagged with its wing, in within-wing walking order. */
+  floorLocations: FloorLocationDef[]
+  /** Floors with a different layout. Locations without a wing are walked in the order listed. */
+  floorOverrides?: Record<string, FloorLocationDef[]>
   /** Stops walked before the first floor / after the last floor. */
   before?: SequenceStop[]
   after?: SequenceStop[]
 }
 
+/** One item in a report line; `text` uses {count}, e.g. "{count} in north kitchen". */
+export interface ReportItem {
+  location: string
+  text: string
+}
+
+/** Renders as "label: item; item." */
+export interface ReportLine {
+  label: string
+  items: ReportItem[]
+}
+
 export interface BuildingConfig {
   id: string
   name: string
-  shortName: string
   layout: SequenceLayout | AlternatingLayout
   /**
-   * Report display order, independent of walking order.
-   * 'walking' = same as walk; 'by-floor' = every floor wings[0] → wings[1] (alternating only);
-   * or an explicit list of route-location ids (unlisted ones are appended in walking order).
+   * Report display order and wording, independent of walking order. Blocks are separated
+   * by a blank line. Every route location must appear exactly once.
    */
-  reportOrder?: 'walking' | 'by-floor' | string[]
+  reportBlocks: ReportLine[][]
 }
 
 /** A single flattened stop on a walking route. Ids are unique within a building. */
@@ -74,7 +84,7 @@ export interface RouteLocation {
   statusOptions?: string[]
   floor?: string
   wing?: string
-  /** For alternating layouts: the direction walked on this floor, e.g. "South → North". */
+  /** For winged floors: the direction walked on this floor, e.g. "South → North". */
   direction?: string
 }
 
@@ -91,16 +101,19 @@ export interface LocationEntry {
   updatedAt: string
 }
 
+/** One building within one sweep: its own answers, times and CAs. */
 export interface BuildingSweep {
   entries: Record<string, LocationEntry>
+  actualStart: string
+  actualEnd: string
+  /** CAs who swept this building this sweep; null = use the shift's default for the building. */
+  cas: string[] | null
 }
 
 export interface Sweep {
   id: string
   /** Scheduled time, HH:MM (24h). Times earlier than the shift start fall on the next day. */
   scheduledTime: string
-  actualStart: string
-  actualEnd: string
   missed: boolean
   missedReason: string
   buildings: Record<string, BuildingSweep>
@@ -135,16 +148,22 @@ export interface Note {
 export interface Shift {
   id: string
   isDemo: boolean
-  /** YYYY-MM-DD the shift starts on. */
+  /** Coverage date (YYYY-MM-DD) — the date the shift starts on. */
   date: string
   type: ShiftType
+  /** Coverage phone pick-up time, HH:MM, or '' if not recorded. */
+  phonePickup: string
   startTime: string
   endTime: string
-  caNames: string[]
-  partners: string[]
+  myName: string
+  otherCAs: string[]
+  /** Default CAs sweeping each building, by building id. */
+  buildingCAs: Record<string, string[]>
   startingBuildingId: string
   sweeps: Sweep[]
   notes: Note[]
+  /** Free-text Extra Notes, printed under the report's Extra Notes heading. */
+  extraNotes: string
   finished: boolean
   /** User-edited report text; null means use the generated report. */
   reportDraft: string | null

@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { getRoute } from '../domain/route'
-import { createShift } from '../domain/shift'
+import { testShift } from '../domain/testShift'
 import type { Shift } from '../domain/types'
 import { StoreProvider, useStore } from '../state/store'
 import { Walkthrough } from './Walkthrough'
@@ -18,16 +18,7 @@ function Spy() {
 }
 
 function setup(buildingId = 'lp') {
-  const shift = createShift({
-    date: '2026-11-04',
-    type: 'weekday',
-    startTime: '19:00',
-    endTime: '03:00',
-    caNames: ['Alex'],
-    partners: [],
-    startingBuildingId: 'lp',
-    sweepTimes: ['20:00', '22:00'],
-  })
+  const shift = testShift()
   const sweepId = shift.sweeps[0]!.id
   render(
     <StoreProvider persist={false} initialShifts={[shift]} initialActiveId={shift.id} initialView={{ name: 'walk', sweepId, buildingId, index: 0 }}>
@@ -38,46 +29,89 @@ function setup(buildingId = 'lp') {
   return { shift, sweepId }
 }
 
-const entries = (sweepId: string, b: string) => latest!.sweeps.find((s) => s.id === sweepId)!.buildings[b]?.entries ?? {}
+const bsweep = (sweepId: string, b: string) => latest!.sweeps.find((s) => s.id === sweepId)!.buildings[b]
+const entries = (sweepId: string, b: string) => bsweep(sweepId, b)?.entries ?? {}
+const heading = () => screen.getByRole('heading', { level: 2 }).textContent
 
-it('saves an explicit zero, records Not Checked, and walks LP in alternating order', () => {
+it('saves an explicit zero, records Not Checked, and fills the building start time', () => {
   const { sweepId } = setup()
   const route = getRoute('lp')
-
-  expect(screen.getByRole('heading', { name: route[0]!.label })).toBeInTheDocument()
+  expect(heading()).toBe(route[0]!.label)
   fireEvent.click(screen.getByRole('button', { name: '0' }))
   fireEvent.click(screen.getByRole('button', { name: /save & next/i }))
   expect(entries(sweepId, 'lp')[route[0]!.id]).toMatchObject({ state: 'answered', count: 0 })
 
-  expect(screen.getByRole('heading', { name: route[1]!.label })).toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: /not checked/i }))
   expect(entries(sweepId, 'lp')[route[1]!.id]).toMatchObject({ state: 'skipped' })
-
-  // Untouched locations stay unanswered.
   expect(entries(sweepId, 'lp')[route[2]!.id]).toBeUndefined()
-  expect(latest!.sweeps[0]!.actualStart).toMatch(/^\d\d:\d\d$/)
+  expect(bsweep(sweepId, 'lp')!.actualStart).toMatch(/^\d\d:\d\d$/)
+  expect(bsweep(sweepId, 'woodstock')).toBeUndefined()
 })
 
-it('walks the full Woodstock route by keyboard in exact order, then hands off to LP', () => {
-  const { sweepId } = setup('woodstock')
-  const route = getRoute('woodstock')
-  route.forEach((loc, i) => {
-    expect(screen.getByRole('heading', { name: loc.label })).toBeInTheDocument()
+it('walks the full Les Prince route by keyboard, including the different Floor 1', () => {
+  const { sweepId } = setup('lp')
+  const seen: string[] = []
+  getRoute('lp').forEach((_, i) => {
+    seen.push(heading()!)
     const input = screen.getByLabelText(/people present/i)
     fireEvent.change(input, { target: { value: String(i) } })
     fireEvent.keyDown(input, { key: 'Enter' })
   })
-  expect(Object.values(entries(sweepId, 'woodstock')).map((e) => e.count)).toEqual(route.map((_, i) => i))
+  expect(seen.slice(0, 8)).toEqual([
+    'Floor 6 south study room',
+    'Floor 6 south kitchen',
+    'Floor 6 north study room',
+    'Floor 6 north kitchen',
+    'Floor 5 north study room',
+    'Floor 5 north kitchen',
+    'Floor 5 south study room',
+    'Floor 5 south kitchen',
+  ])
+  expect(seen.slice(-4)).toEqual(['Floor 1 study room', 'Floor 1 kitchen', 'Games room', 'Laundry room'])
+  expect(Object.keys(entries(sweepId, 'lp'))).toHaveLength(getRoute('lp').length)
   expect(screen.getByText(/end of route/i)).toBeInTheDocument()
-  fireEvent.click(screen.getByRole('button', { name: /continue to lp/i }))
-  expect(screen.getByRole('heading', { name: getRoute('lp')[0]!.label })).toBeInTheDocument()
+})
+
+it('walks the full Woodstock route in exact order, then hands off to Les Prince', () => {
+  const { sweepId } = setup('woodstock')
+  const route = getRoute('woodstock')
+  route.forEach((loc, i) => {
+    expect(heading()).toBe(loc.label)
+    const input = screen.getByLabelText(/people present/i)
+    fireEvent.change(input, { target: { value: String(i) } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+  })
+  expect(route.map((l) => entries(sweepId, 'woodstock')[l.id]?.count)).toEqual(route.map((_, i) => i))
+  fireEvent.click(screen.getByRole('button', { name: /record woodstock end time/i }))
+  expect(bsweep(sweepId, 'woodstock')!.actualEnd).toMatch(/^\d\d:\d\d$/)
+  fireEvent.click(screen.getByRole('button', { name: /continue to les prince/i }))
+  expect(heading()).toBe(getRoute('lp')[0]!.label)
 })
 
 it('refuses to save without a value instead of inventing one', () => {
   const { sweepId } = setup()
   fireEvent.click(screen.getByRole('button', { name: /save & next/i }))
   expect(screen.getByRole('alert')).toHaveTextContent(/enter a count/i)
-  expect(Object.keys(entries(sweepId, 'lp'))).toHaveLength(0)
+  expect(entries(sweepId, 'lp')).toEqual({})
+})
+
+it('starts every location empty, even when the previous sweep had counts', () => {
+  const shift = testShift()
+  const [first, second] = shift.sweeps
+  const prefilled: Shift = {
+    ...shift,
+    sweeps: [
+      { ...first!, buildings: { woodstock: { entries: { 'f6-common': { state: 'answered', count: 5, observation: '', updatedAt: '' } }, actualStart: '', actualEnd: '', cas: null } } },
+      second!,
+      shift.sweeps[2]!,
+    ],
+  }
+  render(
+    <StoreProvider persist={false} initialShifts={[prefilled]} initialActiveId={shift.id} initialView={{ name: 'walk', sweepId: second!.id, buildingId: 'woodstock', index: 0 }}>
+      <Harness />
+    </StoreProvider>,
+  )
+  expect(screen.getByLabelText(/people present/i)).toHaveValue(null)
 })
 
 it('lets you go back and edit a previous answer', () => {
@@ -85,36 +119,40 @@ it('lets you go back and edit a previous answer', () => {
   const route = getRoute('lp')
   fireEvent.change(screen.getByLabelText(/people present/i), { target: { value: '7' } })
   fireEvent.click(screen.getByRole('button', { name: /save & next/i }))
-  fireEvent.click(screen.getByRole('button', { name: /‹ back/i }))
+  fireEvent.click(screen.getByRole('button', { name: 'Back' }))
   expect(screen.getByLabelText(/people present/i)).toHaveValue(7)
   fireEvent.click(screen.getByRole('button', { name: /increase count/i }))
   fireEvent.click(screen.getByRole('button', { name: /save & next/i }))
   expect(entries(sweepId, 'lp')[route[0]!.id]?.count).toBe(8)
 })
 
-it('adds a note pre-filled with the current sweep and location', () => {
+it('edits this building sweep’s CAs and times without changing the shift default', () => {
   const { sweepId } = setup()
-  const route = getRoute('lp')
-  fireEvent.click(screen.getByRole('button', { name: /\+ note/i }))
-  expect(screen.getByLabelText('Location')).toHaveValue(`LP ${route[0]!.label}`)
+  fireEvent.click(screen.getByRole('button', { name: /CAs: Erfan, Jacob/ }))
+  const dialog = screen.getByRole('dialog', { name: /Les Prince sweep details/ })
+  fireEvent.click(within(dialog).getByRole('button', { name: /Erfan/, pressed: true }))
+  fireEvent.change(within(dialog).getByLabelText('End time'), { target: { value: '21:45' } })
+  expect(bsweep(sweepId, 'lp')).toMatchObject({ cas: ['Jacob'], actualEnd: '21:45' })
+  expect(latest!.buildingCAs.lp).toEqual(['Erfan', 'Jacob'])
+})
+
+it('adds a note (e.g. B103) pre-filled with the current sweep and location', () => {
+  const { sweepId } = setup('woodstock')
+  fireEvent.click(screen.getByRole('button', { name: 'Add note' }))
+  expect(screen.getByLabelText('Location')).toHaveValue('Woodstock Floor 6 common room')
   expect((screen.getByLabelText('Time') as HTMLInputElement).value).toMatch(/^\d\d:\d\d$/)
+  fireEvent.change(screen.getByLabelText('Location'), { target: { value: 'Woodstock B103' } })
+  fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'B103 open' } })
+  fireEvent.click(screen.getByRole('button', { name: /save note/i }))
+  expect(latest!.notes[0]).toMatchObject({ kind: 'general', sweepId, location: 'Woodstock B103', description: 'B103 open' })
+})
+
+it('records a maintenance note as observed, not submitted', () => {
+  setup()
+  fireEvent.click(screen.getByRole('button', { name: 'Add note' }))
   fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'work-order' } })
   expect(screen.getByLabelText('Status')).toHaveValue('observed')
   fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Ceiling tile missing' } })
   fireEvent.click(screen.getByRole('button', { name: /save note/i }))
-  expect(latest!.notes).toHaveLength(1)
-  expect(latest!.notes[0]).toMatchObject({ kind: 'work-order', status: 'observed', sweepId, description: 'Ceiling tile missing' })
-})
-
-it('records a status for B103', () => {
-  const { sweepId } = setup()
-  const route = getRoute('lp')
-  const b103 = route.findIndex((r) => r.id === 'b103')
-  fireEvent.click(screen.getByRole('button', { name: /open location list/i }))
-  fireEvent.click(screen.getByRole('button', { name: /^B103/ }))
-  fireEvent.click(screen.getByLabelText('Locked'))
-  fireEvent.click(screen.getByRole('button', { name: /save & next/i }))
-  expect(entries(sweepId, 'lp').b103).toMatchObject({ state: 'answered', status: 'Locked' })
-  expect(b103).toBe(route.length - 1)
-  expect(screen.getByText(/end of route/i)).toBeInTheDocument()
+  expect(latest!.notes[0]).toMatchObject({ kind: 'work-order', status: 'observed' })
 })

@@ -20,7 +20,7 @@ export function useTheme() {
     const apply = () => {
       const dark = pref === 'dark' || (pref === 'system' && !!media?.matches)
       document.documentElement.classList.toggle('dark', dark)
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0b0f17' : '#f5f6f8')
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#191516' : '#f7f5f1')
     }
     apply()
     try {

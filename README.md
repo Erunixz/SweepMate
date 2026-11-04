@@ -32,6 +32,10 @@ The app opens directly in a browser without an account. Large controls, light an
 
 ## Try the workflow
 
+**New to SweepMate?** [Watch the 2-minute video tutorial](docs/media/sweepmate-tutorial.mp4). It covers setting up a shift, walking a route, adding a note and copying the report.
+
+[![SweepMate video tutorial](docs/media/sweepmate-tutorial-poster.jpg)](docs/media/sweepmate-tutorial.mp4)
+
 Open [sweep-mate.vercel.app](https://sweep-mate.vercel.app/) and select **Try a demo shift** on the Princestock start screen. No installation, setup, or account is required. The demo contains fictional data and is stored separately from real shifts. The same walkthrough works [locally](#run-locally).
 
 1. Open the completed **9:00 PM** sweep to inspect progress in both buildings.

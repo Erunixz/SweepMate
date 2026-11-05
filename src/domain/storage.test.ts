@@ -14,7 +14,7 @@ function memoryStorage() {
 }
 
 function fullShift() {
-  let s = testShift({ type: 'peak', startingBuildingId: 'lp', sweepTimes: ['21:00', '01:00'] })
+  let s = testShift({ type: 'weekend', startingBuildingId: 'lp', sweepTimes: ['21:00', '01:00'] })
   const [a] = s.sweeps
   const loc = getRoute('lp')[0]!.id
   s = setEntry(s, a!.id, 'lp', loc, { state: 'answered', count: 0, observation: 'quiet', updatedAt: 'x' })
@@ -52,6 +52,12 @@ it('round-trips every field of a shift', () => {
   const { shifts, problem } = loadAll(st)
   expect(problem).toBeNull()
   expect(shifts[0]).toEqual(s)
+})
+
+it('loads peak-day shifts from older versions as weekends', () => {
+  const st = memoryStorage()
+  st.setItem(SHIFTS_KEY, JSON.stringify({ version: 1, shifts: [{ ...fullShift(), type: 'peak' }] }))
+  expect(loadAll(st).shifts[0]?.type).toBe('weekend')
 })
 
 it('drops demo shifts left by older versions', () => {

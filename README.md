@@ -63,7 +63,7 @@ Copy or download the report
 | Lead coverage | Three-step setup, CA assignments, editable schedules, per-building start/end times, and a combined report |
 | Quick sweep | One building, a date/time, optional CA names, and a building-only report |
 | Guided rounds | Configurable routes, count shortcuts, keyboard entry, Not Checked, observations, and revisiting rooms |
-| Overnight scheduling | Weekday sweeps at 9 PM and 11 PM; weekend and peak shifts also include 1 AM the next day; saved defaults override presets |
+| Overnight scheduling | Every shift runs 9 PM–8 AM. Weekdays sweep at 9 PM and 11 PM; weekends also include 1 AM the next day. Times can be adjusted in setup |
 | Mid-shift changes | Add sweeps from the overview, reject duplicate times, and retain existing sweep records when reordering |
 | Notes and follow-up | General notes, maintenance, Incident Reports, Students of Concern, and follow-up status |
 | Reporting | StarRez format, missing-detail checks, editable report text, copy the full report or one sweep, and TXT download |

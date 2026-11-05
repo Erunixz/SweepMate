@@ -98,7 +98,7 @@ it('builds the full report: sweeps list, coverage notes, every sweep and Extra N
 
   expect(
     r.startsWith(
-      'SWEEPS:\n9:00 PM, 11:00 PM, 1:00 AM\n\nNOTES:\nCoverage date: October 29, 2026\nCoverage phone pick up: 8:50 PM\nStart: 9:00 PM\n\n9:00 PM\n\nWoodstock',
+      'SWEEPS:\n9:00 PM, 11:00 PM, 1:00 AM\n\nNOTES:\nCoverage date: October 29, 2026\nStart: 9:00 PM\n\n9:00 PM\n\nWoodstock',
     ),
   ).toBe(true)
   expect(r).toContain('11:00 PM\n\nWoodstock\nStart time: [not recorded]')

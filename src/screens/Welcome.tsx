@@ -40,7 +40,7 @@ export function Welcome() {
 
       <div className="flex items-start justify-between gap-3 pt-3 pb-6 border-b border-line">
         <div>
-          <h1 className="residence-title text-5xl sm:text-6xl text-accent">Princestock</h1>
+          <h1 className="residence-title text-5xl sm:text-6xl text-[#751c36] dark:text-[#b8395c]">Princestock</h1>
           <p className="mt-3 text-muted">{greeting()}. Ready for rounds?</p>
         </div>
         <ThemeToggle />

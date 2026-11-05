@@ -9,8 +9,6 @@ export interface ReportTemplate {
   /** {date} */
   coverageDate: string
   /** {time} */
-  phonePickup: string
-  /** {time} */
   shiftStart: string
   /** {time} */
   buildingStart: string
@@ -31,7 +29,6 @@ export const DEFAULT_REPORT_TEMPLATE: ReportTemplate = {
   sweepTimesSeparator: ', ',
   notesHeading: 'NOTES:',
   coverageDate: 'Coverage date: {date}',
-  phonePickup: 'Coverage phone pick up: {time}',
   shiftStart: 'Start: {time}',
   buildingStart: 'Start time: {time}',
   buildingCAs: 'CAs: {names}',

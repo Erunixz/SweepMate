@@ -4,12 +4,11 @@ import { cx } from '../components/cx'
 import { Icon } from '../components/Icon'
 import { Button, Header, Page, Segmented, TextInput } from '../components/ui'
 import { BUILDINGS } from '../config/buildings'
-import { SHIFT_TYPE_LABELS } from '../config/schedules'
+import { DEFAULT_SCHEDULES, SHIFT_TYPE_LABELS } from '../config/schedules'
 import { newId } from '../domain/ids'
 import { applySchedule, caPool, createShift, updateDetails } from '../domain/shift'
-import { formatTime12, isNextDay, isValidDate, isValidTime, sortTimesForShift, suggestedShiftDate, weekdayName } from '../domain/time'
+import { formatTime12, isNextDay, isValidDate, isValidTime, suggestedShiftDate, weekdayName } from '../domain/time'
 import type { Shift, ShiftType } from '../domain/types'
-import { loadSchedules, saveSchedule } from '../state/schedulePrefs'
 import { useStore } from '../state/store'
 
 interface SweepRow {
@@ -31,13 +30,14 @@ const STEPS = [
 export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
   const { active, openShift, updateActive, navigate } = useStore()
   const editing = mode === 'edit' && active ? active : null
-  const [schedules, setSchedules] = useState(loadSchedules)
+  const schedules = DEFAULT_SCHEDULES
   const [step, setStep] = useState(0)
 
   const initialType: ShiftType = editing?.type ?? 'weekday'
   const [date, setDate] = useState(editing?.date ?? suggestedShiftDate())
   const [type, setType] = useState<ShiftType>(initialType)
-  const [phonePickup, setPhonePickup] = useState(editing?.phonePickup ?? schedules[initialType].phonePickup)
+  // No longer asked for; kept so editing an older shift doesn't lose it.
+  const phonePickup = editing?.phonePickup ?? ''
   const [startTime, setStartTime] = useState(editing?.startTime ?? schedules[initialType].start)
   const [endTime, setEndTime] = useState(editing?.endTime ?? schedules[initialType].end)
   const [myName, setMyName] = useState(editing?.myName ?? '')
@@ -49,7 +49,6 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
     editing ? editing.sweeps.map((s) => ({ key: s.id, id: s.id, time: s.scheduledTime })) : toRows(schedules[initialType].sweepTimes),
   )
   const [errors, setErrors] = useState<string[]>([])
-  const [savedDefault, setSavedDefault] = useState('')
 
   const pool = caPool({ myName, otherCAs })
   const selectedFor = (b: string) => buildingCAs[b] ?? pool
@@ -58,14 +57,12 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
     const d = schedules[t]
     setStartTime(d.start)
     setEndTime(d.end)
-    setPhonePickup(d.phonePickup)
     // Keep existing sweeps (and their data) when editing; only adjust times.
     setRows((prev) => d.sweepTimes.map((time, i) => ({ key: prev[i]?.key ?? newId(), id: prev[i]?.id, time })))
   }
 
   const changeType = (t: ShiftType) => {
     setType(t)
-    setSavedDefault('')
     if (!editing) applyDefaults(t)
   }
 
@@ -74,7 +71,6 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
     if (s === 0 && !isValidDate(date)) errs.push('Enter a valid coverage date.')
     if (s === 2) {
       if (!isValidTime(startTime) || !isValidTime(endTime)) errs.push('Enter valid shift start and end times.')
-      if (phonePickup && !isValidTime(phonePickup)) errs.push('Enter a valid phone pick-up time, or clear it.')
       if (rows.length === 0) errs.push('Add at least one scheduled sweep.')
       if (rows.some((r) => !isValidTime(r.time))) errs.push('Every sweep needs a valid time.')
       const times = rows.map((r) => r.time)
@@ -113,13 +109,6 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
     } else {
       openShift(createShift({ ...details, sweepTimes: rows.map((r) => r.time) }))
     }
-  }
-
-  const saveAsDefault = () => {
-    const times = rows.map((r) => r.time).filter(isValidTime)
-    const ok = saveSchedule(type, { start: startTime, end: endTime, phonePickup, sweepTimes: sortTimesForShift(startTime, times) })
-    if (ok) setSchedules(loadSchedules())
-    setSavedDefault(ok ? `Saved as the ${SHIFT_TYPE_LABELS[type]} default.` : "Couldn't save the default on this device.")
   }
 
   const removedWithData = editing
@@ -222,12 +211,6 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
                 onChange={setStartingBuildingId}
                 options={BUILDINGS.map((b) => ({ value: b.id, label: b.name }))}
               />
-              <TextInput
-                label="Coverage phone pick-up"
-                type="time"
-                value={phonePickup}
-                onChange={(e) => setPhonePickup(e.target.value)}
-              />
               {/* Shift hours are always 9 PM–8 AM (from the schedule presets), so they aren't asked for. */}
 
               <section className="flex flex-col gap-3 rounded-lg bg-surface border border-line/70 p-4">
@@ -255,20 +238,6 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
                   </p>
                 )}
               </section>
-
-              <div className="flex flex-col items-start gap-1">
-                <Button variant="ghost" size="sm" className="text-accent -ml-2" onClick={saveAsDefault}>
-                  Save times as {SHIFT_TYPE_LABELS[type]} default
-                </Button>
-                <p className="text-xs text-muted" role="status">
-                  {savedDefault || `Pre-fills these times for future ${SHIFT_TYPE_LABELS[type]} shifts.`}
-                </p>
-                {editing && (
-                  <Button variant="ghost" size="sm" className="-ml-2" onClick={() => applyDefaults(type)}>
-                    Use saved {SHIFT_TYPE_LABELS[type]} times
-                  </Button>
-                )}
-              </div>
             </>
           )}
 

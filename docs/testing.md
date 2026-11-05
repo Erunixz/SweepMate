@@ -22,7 +22,7 @@ The current suite contains 68 tests across 10 files. The latest local verificati
 | Exact report wording, missing values, notes, north-first LP output | [report.test.ts](../src/domain/report.test.ts) |
 | Persistence round trips, legacy migration, damaged data, write failures | [storage.test.ts](../src/domain/storage.test.ts) |
 | Single-building routes, reports, and persistence | [quickShift.test.ts](../src/domain/quickShift.test.ts) |
-| Setup, presets, saved defaults, resume, deletion | [App.test.tsx](../src/App.test.tsx) |
+| Setup, Weekday/Weekend presets, resume, deletion | [App.test.tsx](../src/App.test.tsx) |
 | Add-sweep validation, retained data, combined report copy from the Report tab | [Overview.test.tsx](../src/screens/Overview.test.tsx) |
 | Complete routes, keyboard input, zero/skipped states, edits, notes | [Walkthrough.test.tsx](../src/screens/Walkthrough.test.tsx) |
 | Quick-sweep completion, editing, report content, resume, deletion | [QuickSweep.test.tsx](../src/screens/QuickSweep.test.tsx) |

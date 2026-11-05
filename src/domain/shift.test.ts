@@ -76,11 +76,11 @@ it('missing entries include all sweeps but exclude Not Checked locations', () =>
   expect(groups.some((g) => g.sweep.id === third!.id)).toBe(true)
 })
 
-it('lists missing phone pick-up, building times and CAs', () => {
+it('lists missing building times and CAs, but not the phone pick-up', () => {
   let s = testShift({ phonePickup: '', buildingCAs: {} })
   s = updateBuildingSweep(s, s.sweeps[0]!.id, 'woodstock', (b) => ({ ...b, actualStart: '21:00', actualEnd: '21:30', cas: ['Erfan'] }))
   const d = missingDetails(s)
-  expect(d).toContain('Coverage phone pick-up time')
+  expect(d.some((x) => /phone/i.test(x))).toBe(false)
   expect(d).not.toContain('9:00 PM Woodstock: start time')
   expect(d).not.toContain('9:00 PM Woodstock: CAs')
   expect(d).toContain('9:00 PM Les Prince: start time')

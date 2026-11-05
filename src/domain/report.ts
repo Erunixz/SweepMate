@@ -119,7 +119,6 @@ export function generateReport(shift: Shift, t: ReportTemplate = DEFAULT_REPORT_
       [
         t.notesHeading,
         fill(t.coverageDate, { date: formatDateLong(shift.date) }),
-        fill(t.phonePickup, { time: time(shift.phonePickup, t.unanswered) }),
         fill(t.shiftStart, { time: time(shift.startTime, t.unanswered) }),
       ].join('\n'),
     )

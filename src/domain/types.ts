@@ -1,6 +1,6 @@
 /** Core data model. Everything here is plain JSON so it can be saved to localStorage as-is. */
 
-export type ShiftType = 'weekday' | 'weekend' | 'peak'
+export type ShiftType = 'weekday' | 'weekend'
 
 /** "count" locations record an occupancy number; "status" locations pick from a fixed list. */
 export type LocationKind = 'count' | 'status'
@@ -153,7 +153,7 @@ export interface Shift {
   /** Coverage date (YYYY-MM-DD) — the date the shift starts on. */
   date: string
   type: ShiftType
-  /** Coverage phone pick-up time, HH:MM, or '' if not recorded. */
+  /** Former coverage phone pick-up time; no longer asked for or reported. Kept so older saves load. */
   phonePickup: string
   startTime: string
   endTime: string

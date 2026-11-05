@@ -60,7 +60,6 @@ export interface MissingGroup {
 /** Shift and building details the report needs but that haven't been recorded. */
 export function missingDetails(shift: Shift): string[] {
   const out: string[] = []
-  if (shift.mode === 'full' && !shift.phonePickup) out.push('Coverage phone pick-up time')
   if (shift.sweeps.length === 0) out.push('Scheduled sweep times')
   shift.sweeps.forEach((sweep) => {
     for (const b of shiftBuildings(shift)) {

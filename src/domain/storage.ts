@@ -91,7 +91,8 @@ function normalizeNote(v: unknown): Note | null {
 /** Validate and fill defaults for a stored shift. Returns null if it can't be trusted. */
 export function normalizeShift(v: unknown): Shift | null {
   if (!isObj(v) || !isStr(v.id) || !isStr(v.date) || !isStr(v.startTime) || !Array.isArray(v.sweeps)) return null
-  const type = isStr(v.type) && v.type in DEFAULT_SCHEDULES ? (v.type as Shift['type']) : 'weekday'
+  // Peak days were removed; they used the weekend schedule, so older ones load as weekends.
+  const type: Shift['type'] = v.type === 'weekend' || v.type === 'peak' ? 'weekend' : 'weekday'
   const mode = v.mode === 'quick' ? 'quick' : 'full'
   const quickBuildingId = mode === 'quick' && isStr(v.quickBuildingId) ? v.quickBuildingId : null
   if (mode === 'quick' && (!quickBuildingId || !getBuilding(quickBuildingId) || v.sweeps.length !== 1)) return null

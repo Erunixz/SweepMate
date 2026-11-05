@@ -31,7 +31,7 @@ it('walks setup in three steps with no pre-filled name, confirmed sweep times, a
   // Shift hours are fixed at 9 PM–8 AM, so setup doesn't ask for them.
   expect(screen.queryByLabelText('Shift start')).toBeNull()
   expect(screen.queryByLabelText('Shift end')).toBeNull()
-  expect(screen.getByLabelText('Coverage phone pick-up')).toHaveValue('')
+  expect(screen.queryByLabelText('Coverage phone pick-up')).toBeNull()
   expect(screen.getByLabelText('Sweep 1')).toHaveValue('21:00')
   expect(screen.getByLabelText('Sweep 2')).toHaveValue('23:00')
   fireEvent.click(screen.getByRole('button', { name: 'Start shift' }))
@@ -47,15 +47,14 @@ it('shows the CA names on the overview and uses everyone for both buildings by d
   expect(saved.buildingCAs).toEqual({ woodstock: ['Erfan', 'Jacob'], lp: ['Erfan', 'Jacob'] })
 })
 
-it.each(['Weekend', 'Peak day'])('starts %s with the confirmed overnight schedule', (type) => {
+it('starts a Weekend shift with the 9 PM, 11 PM and 1 AM sweeps', () => {
   render(<App />)
   fireEvent.click(screen.getByRole('button', { name: /^Lead coverage/ }))
-  fireEvent.click(screen.getByRole('radio', { name: type }))
+  fireEvent.click(screen.getByRole('radio', { name: 'Weekend' }))
   next()
   next()
   expect(screen.getAllByLabelText(/^Sweep \d$/).map((i) => (i as HTMLInputElement).value)).toEqual(['21:00', '23:00', '01:00'])
   expect(screen.getByLabelText('Sweep 3')).toHaveAccessibleDescription('next day')
-  expect(screen.getByLabelText('Coverage phone pick-up')).toHaveValue('')
   fireEvent.click(screen.getByRole('button', { name: 'Start shift' }))
   const saved = JSON.parse(localStorage.getItem(SHIFTS_KEY)!).shifts[0]
   expect(saved.sweeps.map((s: { scheduledTime: string }) => s.scheduledTime)).toEqual(['21:00', '23:00', '01:00'])
@@ -75,28 +74,21 @@ it('lets you choose who sweeps each building', () => {
   expect(saved.buildingCAs).toEqual({ woodstock: ['Erfan', 'Jacob'], lp: ['Jacob'] })
 })
 
-it('saves a schedule as the default for its shift type', () => {
+it('offers only Weekday and Weekend, each with its own sweep times and no save-default option', () => {
   render(<App />)
   fireEvent.click(screen.getByRole('button', { name: /^Lead coverage/ }))
-  fireEvent.click(screen.getByRole('radio', { name: 'Peak day' }))
+  expect(screen.getAllByRole('radio').map((r) => r.getAttribute('value'))).toEqual(['weekday', 'weekend'])
+  expect(screen.queryByRole('radio', { name: 'Peak day' })).toBeNull()
   next()
   next()
-  fireEvent.change(screen.getByLabelText('Coverage phone pick-up'), { target: { value: '20:50' } })
-  fireEvent.change(screen.getByLabelText('Sweep 1'), { target: { value: '21:15' } })
-  fireEvent.click(screen.getByRole('button', { name: /Save times as Peak day default/ }))
+  expect(screen.getAllByLabelText(/^Sweep \d$/).map((i) => (i as HTMLInputElement).value)).toEqual(['21:00', '23:00'])
+  expect(screen.queryByRole('button', { name: /Save times as/ })).toBeNull()
 
   fireEvent.click(screen.getByRole('button', { name: /1\. Shift/ }))
-  fireEvent.click(screen.getByRole('radio', { name: 'Weekday' }))
+  fireEvent.click(screen.getByRole('radio', { name: 'Weekend' }))
   next()
   next()
-  expect(screen.queryAllByLabelText(/^Sweep \d$/)).toHaveLength(2)
-
-  fireEvent.click(screen.getByRole('button', { name: /1\. Shift/ }))
-  fireEvent.click(screen.getByRole('radio', { name: 'Peak day' }))
-  next()
-  next()
-  expect(screen.getAllByLabelText(/^Sweep \d$/).map((i) => (i as HTMLInputElement).value)).toEqual(['21:15', '23:00', '01:00'])
-  expect(screen.getByLabelText('Coverage phone pick-up')).toHaveValue('20:50')
+  expect(screen.getAllByLabelText(/^Sweep \d$/).map((i) => (i as HTMLInputElement).value)).toEqual(['21:00', '23:00', '01:00'])
 })
 
 it('autosaves a new shift and restores it after a reload', () => {

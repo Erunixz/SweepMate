@@ -59,7 +59,7 @@ Do not rename location IDs during a route reorder. Existing answers are keyed by
 
 ## Full coverage and Quick sweep
 
-Quick sweep creates one sweep and records one building ID on the same Shift model. `shiftBuildings` restricts its progress, missing-data checks, and navigation to that building. The shared walkthrough records counts, notes, CAs, and actual times. The report omits the coverage header and phone pickup details.
+Quick sweep creates one sweep and records one building ID on the same Shift model. `shiftBuildings` restricts its progress, missing-data checks, and navigation to that building. The shared walkthrough records counts, notes, CAs, and actual times. The report omits the coverage header.
 
 Older stored shifts normalize to `mode: 'full'` and `quickBuildingId: null`. Invalid quick-building IDs or quick records without exactly one sweep are rejected during normalization.
 
@@ -70,7 +70,7 @@ Older stored shifts normalize to `mode: 'full'` and `quickBuildingId: null`. Inv
 | localStorage | `sweepmate:v1:shifts` | Real shifts in a versioned envelope |
 | localStorage | `sweepmate:v1:demo` | Former demo record; removed on load |
 | localStorage | `sweepmate:v1:backup-*` | Best-effort raw backups when damaged shift data is detected |
-| localStorage | `sweepmate:schedules` | User-saved schedule defaults |
+| localStorage | `sweepmate:schedules` | Former saved schedule defaults; no longer read |
 | localStorage | `sweepmate:report-template` | Former report wording overrides; no longer read (the StarRez format is fixed) |
 | localStorage | `sweepmate:theme` | Theme preference |
 | sessionStorage | `sweepmate:v1:session` | Active shift ID and screen within the current tab |
@@ -106,7 +106,6 @@ Potential next steps include a restorable data export/import format, real-browse
 | --- | --- |
 | Buildings, walking order, report room wording | [buildings.ts](../src/config/buildings.ts) |
 | Default sweep times | [schedules.ts](../src/config/schedules.ts) |
-| Saved schedule overrides | [schedulePrefs.ts](../src/state/schedulePrefs.ts) |
 | Report headings and placeholders | [reportTemplate.ts](../src/config/reportTemplate.ts) |
 | Note kinds and status wording | [noteKinds.ts](../src/config/noteKinds.ts) |
 | New stored fields and migrations | [types.ts](../src/domain/types.ts), [storage.ts](../src/domain/storage.ts) |

@@ -41,7 +41,7 @@ export function Button({
 }
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
-  return <section className={cx('rounded-lg bg-surface border border-line/80 p-4 sm:p-5', className)}>{children}</section>
+  return <section className={cx('rounded-xl bg-surface p-4 sm:p-5 shadow-[0_1px_3px_rgb(0_0_0/0.06)]', className)}>{children}</section>
 }
 
 /** Small uppercase label above a group of content. */
@@ -235,7 +235,7 @@ export function Header({
   right?: ReactNode
 }) {
   return (
-    <header className="sticky top-0 z-20 bg-bg border-b border-line/60">
+    <header className="sticky top-0 z-20 bg-bg/95 backdrop-blur">
       <div className="mx-auto max-w-2xl flex items-center gap-2 px-3 py-2 min-h-14">
         {onBack && (
           <Button variant="ghost" onClick={onBack} aria-label={backLabel} className="px-2.5 -ml-1">
@@ -255,5 +255,5 @@ export function Header({
 }
 
 export function Page({ children, className }: { children: ReactNode; className?: string }) {
-  return <main className={cx('page-enter mx-auto w-full max-w-2xl px-4 sm:px-6 py-5 flex flex-col gap-4', className)}>{children}</main>
+  return <main className={cx('page-enter mx-auto w-full max-w-2xl px-4 sm:px-6 py-5 flex flex-col gap-5', className)}>{children}</main>
 }

@@ -15,6 +15,9 @@ export function BuildingDetails({ shift, sweep, buildingId }: { shift: Shift; sw
   const bs = sweep.buildings[buildingId]
   const cas = sweepBuildingCAs(shift, sweep, buildingId)
   const name = getBuilding(buildingId)?.name ?? ''
+  const start = formatTime12(bs?.actualStart ?? '')
+  const end = formatTime12(bs?.actualEnd ?? '')
+  const summary = [start ? (end ? `${start}–${end}` : `Started ${start}`) : 'Not started', cas.length ? cas.join(', ') : 'No CAs set'].join(' · ')
   const patch = (p: Partial<BuildingSweep>) => updateActive((s) => updateBuildingSweep(s, sweep.id, buildingId, (b) => ({ ...b, ...p })))
 
   return (
@@ -22,16 +25,11 @@ export function BuildingDetails({ shift, sweep, buildingId }: { shift: Shift; sw
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-lg border border-line/70 bg-surface px-3.5 py-2.5 min-h-12 text-left text-xs transition hover:border-accent/50"
+        aria-label={`Sweep details: ${summary}. Edit`}
+        className="flex items-center gap-2 -mx-2 px-2 min-h-10 rounded-md text-left text-sm text-muted transition hover:bg-surface-2"
       >
-        <span className="flex-1 min-w-0">
-          <span className="block">
-            <span className="text-muted">Start</span> <strong>{formatTime12(bs?.actualStart ?? '') || '—'}</strong>
-            <span className="text-muted"> · End</span> <strong>{formatTime12(bs?.actualEnd ?? '') || '—'}</strong>
-          </span>
-          <span className={`block truncate ${cas.length ? '' : 'text-warn font-semibold'}`}>CAs: {cas.length ? cas.join(', ') : 'not set'}</span>
-        </span>
-        <span className="font-semibold text-accent">Edit ›</span>
+        <span className="flex-1 min-w-0 truncate">{summary}</span>
+        <span className="text-xs font-semibold text-accent">Edit</span>
       </button>
 
       <Sheet open={open} onClose={() => setOpen(false)} title={`${name} sweep details`}>

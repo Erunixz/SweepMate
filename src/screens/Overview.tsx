@@ -8,8 +8,8 @@ import { Badge, Button, Card, Eyebrow, Header, Page, ProgressBar, TextInput } fr
 import { SHIFT_TYPE_LABELS } from '../config/schedules'
 import { buildingProgress, firstUnansweredIndex, hasStarted, isDone, sweepProgress } from '../domain/progress'
 import { getBuilding, getRoute, shiftBuildings } from '../domain/route'
-import { applySchedule, caPool, sweepBuildingCAs } from '../domain/shift'
-import { formatDateShort, formatTime12, isValidTime, labelShiftTime, nowTime } from '../domain/time'
+import { applySchedule, caPool } from '../domain/shift'
+import { formatDateShort, isValidTime, labelShiftTime, nowTime } from '../domain/time'
 import type { Shift, Sweep } from '../domain/types'
 import { useActiveShift } from '../state/store'
 
@@ -35,11 +35,7 @@ export function Overview() {
     <>
       <Header
         title={formatDateShort(shift.date)}
-        subtitle={quick ? `Quick sweep · ${getBuilding(shift.quickBuildingId!)?.name}` :
-          <>
-            {SHIFT_TYPE_LABELS[shift.type]} · {formatTime12(shift.startTime)}–{formatTime12(shift.endTime)}
-          </>
-        }
+        subtitle={quick ? `Quick sweep · ${getBuilding(shift.quickBuildingId!)?.name}` : `${SHIFT_TYPE_LABELS[shift.type]} · ${names.length ? names.join(', ') : 'No CAs yet'}`}
         onBack={() => navigate({ name: 'welcome' })}
         backLabel="Home"
         right={
@@ -54,8 +50,6 @@ export function Overview() {
       <Page className="pb-28">
         {!quick && <UpNext shift={shift} />}
 
-        {!quick && <TeamRow names={names} onEdit={edit} />}
-
         {shift.sweeps.length === 0 && (
           <Card>
             <p className="text-sm">
@@ -67,12 +61,9 @@ export function Overview() {
           </Card>
         )}
 
-        {shift.sweeps.length > 0 && <div className="flex items-center justify-between px-1 pt-2">
-          <Eyebrow>{quick ? 'Your sweep' : 'Sweeps'}</Eyebrow>
-          <span className="text-xs text-muted tabular-nums">{shift.sweeps.filter((s) => isDone(sweepProgress(shift, s))).length} of {shift.sweeps.length} complete</span>
-        </div>}
-        {shift.sweeps.map((sweep, i) => (
-          <SweepCard key={sweep.id} shift={shift} sweep={sweep} number={i + 1} defaultOpen={quick || sweep.id === current} />
+        {shift.sweeps.length > 0 && <Eyebrow className="px-1 pt-3">{quick ? 'Your sweep' : 'Tonight'}</Eyebrow>}
+        {shift.sweeps.map((sweep) => (
+          <SweepCard key={sweep.id} shift={shift} sweep={sweep} defaultOpen={quick || sweep.id === current} />
         ))}
         {!quick && <AddSweep />}
 
@@ -88,6 +79,7 @@ export function Overview() {
         </div>
       </Page>
       <BottomNav badge={{ notes: openFollowUps }} />
+
     </>
   )
 }
@@ -98,8 +90,8 @@ function AddSweep() {
   const [time, setTime] = useState(nowTime())
   const [error, setError] = useState('')
   return <>
-    <Button size="lg" className="border-dashed text-accent" onClick={() => { setTime(nowTime()); setError(''); setOpen(true) }}>
-      <Icon name="plus" /> Add sweep
+    <Button variant="ghost" className="self-center text-accent" onClick={() => { setTime(nowTime()); setError(''); setOpen(true) }}>
+      <Icon name="plus" size={16} /> Add sweep
     </Button>
     <Sheet open={open} onClose={() => setOpen(false)} title="Add sweep">
       <form className="flex flex-col gap-4" noValidate onSubmit={(e) => {
@@ -117,6 +109,9 @@ function AddSweep() {
   </>
 }
 
+const heroClass = 'rounded-2xl p-6 flex flex-col gap-5 text-white shadow-lg shadow-[#561327]/20 bg-gradient-to-br from-[#8f2645] to-[#561327]'
+const heroButton = 'inline-flex items-center justify-center gap-2 min-h-14 rounded-xl bg-white text-[#5b152a] text-base font-bold transition hover:bg-white/90 active:scale-[0.99]'
+
 /** Hero card with the single next action. */
 function UpNext({ shift }: { shift: Shift }) {
   const { navigate } = useActiveShift()
@@ -125,13 +120,15 @@ function UpNext({ shift }: { shift: Shift }) {
 
   if (!next) {
     return (
-      <section className="rounded-lg bg-surface border border-line border-t-4 border-t-accent p-5 flex flex-col gap-1">
-        <Eyebrow className="text-accent">Complete</Eyebrow>
-        <h2 className="text-xl font-semibold">All sweeps recorded</h2>
-        <p className="text-muted text-sm">Copy the report and paste it into StarRez.</p>
-        <Button variant="primary" size="lg" className="mt-3" onClick={() => navigate({ name: 'report' })}>
+      <section className={heroClass}>
+        <div className="flex flex-col gap-1">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/70">All done</p>
+          <h2 className="text-3xl font-semibold tracking-tight">Nice work tonight</h2>
+          <p className="text-white/80">Your report is ready for StarRez.</p>
+        </div>
+        <button type="button" className={heroButton} onClick={() => navigate({ name: 'report' })}>
           Open report
-        </Button>
+        </button>
       </section>
     )
   }
@@ -141,51 +138,29 @@ function UpNext({ shift }: { shift: Shift }) {
   const p = buildingProgress(sweep, buildingId)
   const index = firstUnansweredIndex(sweep, buildingId)
   const nextLocation = getRoute(buildingId)[index]
+  const done = p.answered + p.skipped
 
   return (
-    <section className="rounded-lg bg-surface border border-line border-t-4 border-t-accent p-5 sm:p-6 flex flex-col gap-5">
+    <section className={heroClass}>
       <div className="flex flex-col gap-1">
-        <Eyebrow className="text-accent">Up next · {labelShiftTime(shift.startTime, sweep.scheduledTime)} sweep</Eyebrow>
-        <h2 className="text-2xl font-semibold tracking-tight">{building.name}</h2>
-        <p className="text-muted text-sm">
-          {hasStarted(p) ? `${p.answered + p.skipped} of ${p.total} done · next: ${nextLocation?.label}` : `${p.total} locations · starts at ${nextLocation?.label}`}
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/70">Up next · {labelShiftTime(shift.startTime, sweep.scheduledTime)}</p>
+        <h2 className="text-3xl font-semibold tracking-tight">{building.name}</h2>
+        <p className="text-white/80">{hasStarted(p) ? `Next: ${nextLocation?.label}` : `Starts at ${nextLocation?.label}`}</p>
       </div>
-      <ProgressBar value={p.answered + p.skipped} max={p.total} label={`${building.name} next sweep progress`} className="h-1" />
-      <Button
-        variant="primary"
-        size="lg"
-        onClick={() => navigate({ name: 'walk', sweepId: sweep.id, buildingId, index })}
-      >
+      {hasStarted(p) && (
+        <div role="progressbar" aria-label={`${building.name} next sweep progress`} aria-valuemin={0} aria-valuemax={p.total} aria-valuenow={done} className="h-1.5 rounded-full bg-white/20 overflow-hidden">
+          <div className="h-full rounded-full bg-white transition-[width]" style={{ width: `${(done / p.total) * 100}%` }} />
+        </div>
+      )}
+      <button type="button" className={heroButton} onClick={() => navigate({ name: 'walk', sweepId: sweep.id, buildingId, index })}>
         <Icon name="play" size={16} />
         {hasStarted(p) ? `Continue ${building.name}` : `Start ${building.name}`}
-      </Button>
+      </button>
     </section>
   )
 }
 
-/** Everyone on coverage, always visible on the overview. */
-function TeamRow({ names, onEdit }: { names: string[]; onEdit: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onEdit}
-      aria-label={names.length ? `CAs on coverage: ${names.join(', ')}. Edit` : 'Add CA names'}
-      className="flex items-center gap-3 rounded-lg bg-surface border border-line/70 px-4 py-3 text-left min-h-14 hover:border-accent/50 transition"
-    >
-      <Icon name="users" size={18} className="text-muted" />
-      <span className="flex-1 min-w-0">
-        <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-muted">On coverage</span>
-        <span className={cx('block text-sm font-semibold truncate', !names.length && 'text-warn')}>
-          {names.length ? names.join(', ') : 'Add CA names'}
-        </span>
-      </span>
-      <Icon name="edit" size={16} className="text-muted" />
-    </button>
-  )
-}
-
-function SweepCard({ shift, sweep, number, defaultOpen }: { shift: Shift; sweep: Sweep; number: number; defaultOpen: boolean }) {
+function SweepCard({ shift, sweep, defaultOpen }: { shift: Shift; sweep: Sweep; defaultOpen: boolean }) {
   const { navigate } = useActiveShift()
   const [open, setOpen] = useState(defaultOpen)
   const detailsId = useId()
@@ -203,54 +178,32 @@ function SweepCard({ shift, sweep, number, defaultOpen }: { shift: Shift; sweep:
         aria-controls={detailsId}
         className="flex items-center gap-3 text-left min-h-11 -mx-1 px-1 rounded-md"
       >
-        <span className="flex-1">
-          <span className="block text-xl font-semibold tracking-tight tabular-nums">{labelShiftTime(shift.startTime, sweep.scheduledTime)}</span>
-          <span className="block text-xs text-muted">
-            Sweep {number} · {total.answered + total.skipped}/{total.total}
-          </span>
-        </span>
+        <span className="flex-1 text-xl font-semibold tracking-tight tabular-nums">{labelShiftTime(shift.startTime, sweep.scheduledTime)}</span>
         {status}
         <Icon name="chevron" className={cx('text-muted transition-transform', open && 'rotate-90')} />
       </button>
 
       <div id={detailsId} className="sweep-details" data-open={open} inert={!open} aria-hidden={!open}>
         <div className="min-h-0 overflow-hidden">
-        <ul className="flex flex-col gap-1.5 pt-3">
+        <ul className="flex flex-col pt-2">
           {shiftBuildings(shift).map((b) => {
             const p = buildingProgress(sweep, b.id)
-            const bs = sweep.buildings[b.id]
             const done = isDone(p)
-            const cas = sweepBuildingCAs(shift, sweep, b.id)
-            const times = bs?.actualStart || bs?.actualEnd ? `${formatTime12(bs.actualStart) || '?'}–${formatTime12(bs.actualEnd) || '…'}` : ''
             return (
               <li key={b.id}>
                 <button
                   type="button"
                   onClick={() => navigate({ name: 'walk', sweepId: sweep.id, buildingId: b.id, index: done ? 0 : firstUnansweredIndex(sweep, b.id) })}
-                  className="w-full flex items-center gap-3 rounded-lg bg-surface-2/70 px-3.5 py-2.5 min-h-14 text-left transition hover:bg-surface-2"
+                  className="w-full flex items-center gap-3 rounded-lg -mx-2 px-2 py-2.5 min-h-14 text-left transition hover:bg-surface-2"
                 >
-                  <span
-                    aria-hidden="true"
-                    className={cx(
-                      'size-8 shrink-0 rounded-full grid place-items-center text-xs font-bold',
-                      done ? 'bg-ok-soft text-ok' : hasStarted(p) ? 'bg-accent-soft text-accent' : 'bg-surface text-muted border border-line',
-                    )}
-                  >
-                    {done ? <Icon name="check" size={16} /> : b.name.charAt(0)}
-                  </span>
                   <span className="flex-1 min-w-0">
                     <span className="flex items-center justify-between gap-2">
                       <span className="font-semibold">{b.name}</span>
-                      <span className="text-xs text-muted tabular-nums">
-                        {p.answered + p.skipped}/{p.total}
+                      <span className={cx('text-xs tabular-nums', done ? 'text-ok font-semibold' : 'text-muted')}>
+                        {done ? 'Done' : `${p.answered + p.skipped} of ${p.total}`}
                       </span>
                     </span>
-                    <ProgressBar value={p.answered + p.skipped} max={p.total} label={`${b.name} progress`} className="h-1 mt-1.5" />
-                    {(times || cas.length > 0 || p.skipped > 0) && (
-                      <span className="block text-xs text-muted truncate mt-1">
-                        {[times, cas.join(', '), p.skipped ? `${p.skipped} not checked` : ''].filter(Boolean).join(' · ')}
-                      </span>
-                    )}
+                    <ProgressBar value={p.answered + p.skipped} max={p.total} label={`${b.name} progress`} className="h-1 mt-2" />
                   </span>
                   <Icon name="chevron" className="text-muted shrink-0" />
                 </button>

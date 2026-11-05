@@ -128,7 +128,7 @@ it('lets you go back and edit a previous answer', () => {
 
 it('edits this building sweep’s CAs and times without changing the shift default', () => {
   const { sweepId } = setup()
-  fireEvent.click(screen.getByRole('button', { name: /CAs: Erfan, Jacob/ }))
+  fireEvent.click(screen.getByRole('button', { name: /Sweep details: Not started · Erfan, Jacob/ }))
   const dialog = screen.getByRole('dialog', { name: /Les Prince sweep details/ })
   fireEvent.click(within(dialog).getByRole('button', { name: /Erfan/, pressed: true }))
   fireEvent.change(within(dialog).getByLabelText('End time'), { target: { value: '21:45' } })

@@ -24,7 +24,7 @@ const toRows = (times: string[]): SweepRow[] => times.map((time) => ({ key: newI
 const STEPS = [
   { title: 'Shift', heading: 'Which shift?', sub: 'The coverage date is the night the shift starts.' },
   { title: 'Team', heading: "Who's on coverage?", sub: 'Add the CAs, then pick who sweeps each building.' },
-  { title: 'Schedule', heading: 'Set the schedule', sub: 'Times before the shift start (like 1:00 AM) count as the next day.' },
+  { title: 'Schedule', heading: 'Set the schedule', sub: 'Tonight runs 9 PM to 8 AM. A 1 AM sweep counts as the next day.' },
 ] as const
 
 /** Shift setup as three short steps. In edit mode every step is reachable and Save is always available. */
@@ -228,16 +228,7 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
                 value={phonePickup}
                 onChange={(e) => setPhonePickup(e.target.value)}
               />
-              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
-                <TextInput label="Shift start" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
-                <TextInput
-                  label="Shift end"
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  hint={isValidTime(endTime) && isValidTime(startTime) && isNextDay(startTime, endTime) ? 'Next day' : undefined}
-                />
-              </div>
+              {/* Shift hours are always 9 PM–8 AM (from the schedule presets), so they aren't asked for. */}
 
               <section className="flex flex-col gap-3 rounded-lg bg-surface border border-line/70 p-4">
                 <h3 className="text-sm font-semibold">Scheduled sweeps</h3>

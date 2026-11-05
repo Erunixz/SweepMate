@@ -28,18 +28,21 @@ it('walks setup in three steps with no pre-filled name, confirmed sweep times, a
   expect(screen.getByRole('heading', { name: "Who's on coverage?" })).toBeInTheDocument()
   expect(screen.getByLabelText('My name')).toHaveValue('')
   next()
-  expect(screen.getByLabelText('Shift start')).toHaveValue('21:00')
-  expect(screen.getByLabelText('Shift end')).toHaveValue('08:00')
+  // Shift hours are fixed at 9 PM–8 AM, so setup doesn't ask for them.
+  expect(screen.queryByLabelText('Shift start')).toBeNull()
+  expect(screen.queryByLabelText('Shift end')).toBeNull()
   expect(screen.getByLabelText('Coverage phone pick-up')).toHaveValue('')
   expect(screen.getByLabelText('Sweep 1')).toHaveValue('21:00')
   expect(screen.getByLabelText('Sweep 2')).toHaveValue('23:00')
   fireEvent.click(screen.getByRole('button', { name: 'Start shift' }))
   expect(screen.queryByRole('alert')).toBeNull()
+  const saved = JSON.parse(localStorage.getItem(SHIFTS_KEY)!).shifts[0]
+  expect([saved.startTime, saved.endTime]).toEqual(['21:00', '08:00'])
 })
 
 it('shows the CA names on the overview and uses everyone for both buildings by default', () => {
   startShift()
-  expect(screen.getByRole('button', { name: /CAs on coverage: Erfan, Jacob/ })).toBeInTheDocument()
+  expect(screen.getByText('Weekday · Erfan, Jacob')).toBeInTheDocument()
   const saved = JSON.parse(localStorage.getItem(SHIFTS_KEY)!).shifts[0]
   expect(saved.buildingCAs).toEqual({ woodstock: ['Erfan', 'Jacob'], lp: ['Erfan', 'Jacob'] })
 })
@@ -98,13 +101,13 @@ it('saves a schedule as the default for its shift type', () => {
 
 it('autosaves a new shift and restores it after a reload', () => {
   const first = startShift()
-  expect(screen.getByText(/Sweep 1/)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /^Start Woodstock/ })).toBeInTheDocument()
   expect(JSON.parse(localStorage.getItem(SHIFTS_KEY)!).shifts).toHaveLength(1)
 
   // Same tab refresh: returns straight to the shift.
   first.unmount()
   const second = render(<App />)
-  expect(screen.getAllByText(/Sweep 1/).length).toBeGreaterThan(0)
+  expect(screen.getByRole('button', { name: /^Start Woodstock/ })).toBeInTheDocument()
 
   // New session (app reopened): offered on the welcome screen.
   second.unmount()
@@ -125,6 +128,16 @@ it('requires confirmation before deleting a shift', () => {
   fireEvent.click(screen.getByRole('button', { name: /Delete shift on/ }))
   fireEvent.click(within(screen.getByRole('dialog', { name: 'Delete shift?' })).getByRole('button', { name: 'Delete shift' }))
   expect(JSON.parse(localStorage.getItem(SHIFTS_KEY)!).shifts).toHaveLength(0)
+})
+
+it('deletes an unfinished shift from the home screen without finishing it', () => {
+  startShift()
+  fireEvent.click(screen.getByRole('button', { name: 'Home' }))
+  fireEvent.click(screen.getByRole('button', { name: /Delete shift on/ }))
+  fireEvent.click(within(screen.getByRole('dialog', { name: 'Delete shift?' })).getByRole('button', { name: 'Delete shift' }))
+  expect(JSON.parse(localStorage.getItem(SHIFTS_KEY)!).shifts).toHaveLength(0)
+  expect(screen.getByRole('button', { name: /^Lead coverage/ })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Resume Shift/ })).toBeNull()
 })
 
 it('shows a notice when saved data is corrupted', () => {

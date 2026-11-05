@@ -19,6 +19,7 @@ export function Notes() {
   const [editing, setEditing] = useState<Note | null>(null)
   const [adding, setAdding] = useState(false)
   const [toDelete, setToDelete] = useState<Note | null>(null)
+  const [showExtra, setShowExtra] = useState(() => !!shift.extraNotes.trim())
 
   const sweepLabel = (id: string | null) => {
     const i = shift.sweeps.findIndex((s) => s.id === id)
@@ -30,14 +31,6 @@ export function Notes() {
     <>
       <Header title="Notes" right={<SaveIndicator />} />
       <Page className="pb-44">
-        <Card className="flex flex-col gap-2">
-          <TextArea
-            label="Extra Notes"
-            value={shift.extraNotes}
-            rows={3}
-            onChange={(e) => updateActive((s) => ({ ...s, extraNotes: e.target.value, updatedAt: new Date().toISOString() }))}
-          />
-        </Card>
         {notes.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <div aria-hidden="true" className="size-12 rounded-lg bg-accent-soft text-accent grid place-items-center">
@@ -79,6 +72,24 @@ export function Notes() {
             )
           })}
         </ul>
+
+        {/* Free-text Extra Notes: tucked away until wanted, open if it already has text. */}
+        {showExtra ? (
+          <Card className="flex flex-col gap-2">
+            <TextArea
+              label="Extra notes"
+              value={shift.extraNotes}
+              rows={3}
+              autoFocus={!shift.extraNotes}
+              placeholder="Anything else for the report, one line per entry"
+              onChange={(e) => updateActive((s) => ({ ...s, extraNotes: e.target.value, updatedAt: new Date().toISOString() }))}
+            />
+          </Card>
+        ) : (
+          <Button variant="ghost" className="self-center text-accent" onClick={() => setShowExtra(true)}>
+            <Icon name="plus" size={16} /> Add extra notes
+          </Button>
+        )}
       </Page>
 
       <div className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 pointer-events-none">

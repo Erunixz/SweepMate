@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { Icon } from '../components/Icon'
 import { LoadProblemBanner } from '../components/LoadProblemBanner'
 import { ConfirmSheet } from '../components/Sheet'
 import { ThemeToggle } from '../components/ThemeToggle'
-import { Badge, Button, Eyebrow, Page } from '../components/ui'
+import { Badge, Eyebrow, Page } from '../components/ui'
 import { SHIFT_TYPE_LABELS } from '../config/schedules'
 import { sweepProgress } from '../domain/progress'
 import { getBuilding } from '../domain/route'
@@ -20,6 +19,14 @@ function shiftSummary(shift: Shift) {
   return `${shift.mode === 'quick' ? getBuilding(shift.quickBuildingId!)?.name : SHIFT_TYPE_LABELS[shift.type]} · ${caPool(shift).join(', ') || 'No CA names'}`
 }
 
+/** Friendly time-of-day greeting; overnight hours count as evening. */
+function greeting(now = new Date()) {
+  const h = now.getHours()
+  if (h >= 5 && h < 12) return 'Good morning'
+  if (h >= 12 && h < 17) return 'Good afternoon'
+  return 'Good evening'
+}
+
 export function Welcome() {
   const { shifts, openShift, navigate, deleteShift } = useStore()
   const [toDelete, setToDelete] = useState<Shift | null>(null)
@@ -34,38 +41,50 @@ export function Welcome() {
       <div className="flex items-start justify-between gap-3 pt-3 pb-6 border-b border-line">
         <div>
           <h1 className="residence-title text-5xl sm:text-6xl text-accent">Princestock</h1>
-          <p className="mt-3 text-sm text-muted">Woodstock &amp; Les Prince</p>
+          <p className="mt-3 text-muted">{greeting()}. Ready for rounds?</p>
         </div>
         <ThemeToggle />
       </div>
 
       {latest && (
-        <button
-          type="button"
-          onClick={() => openShift(latest)}
-          aria-label={`Resume Shift – ${formatDateShort(latest.date)}`}
-          className="flex items-center gap-4 rounded-lg bg-surface border border-line border-l-4 border-l-accent p-4 text-left transition hover:bg-surface-2"
-        >
-          <span className="flex-1 min-w-0">
-            <span className="block text-xs font-semibold text-accent">Continue</span>
-            <span className="block text-lg font-bold tracking-tight">{formatDateShort(latest.date)}</span>
-            <span className="block text-sm text-muted truncate">
-              {shiftSummary(latest)} · {sweepsDone(latest)}/{latest.sweeps.length} sweeps
+        <div className="flex items-center rounded-xl bg-surface border-l-4 border-l-accent shadow-[0_1px_3px_rgb(0_0_0/0.06)] overflow-hidden">
+          <button
+            type="button"
+            onClick={() => openShift(latest)}
+            aria-label={`Resume Shift – ${formatDateShort(latest.date)}`}
+            className="flex-1 min-w-0 flex items-center gap-3 p-4 text-left transition hover:bg-surface-2"
+          >
+            <span className="flex-1 min-w-0">
+              <span className="block text-xs font-semibold text-accent">Continue</span>
+              <span className="block text-lg font-bold tracking-tight">{formatDateShort(latest.date)}</span>
+              <span className="block text-sm text-muted truncate">
+                {shiftSummary(latest)} · {sweepsDone(latest)}/{latest.sweeps.length} sweeps
+              </span>
             </span>
-          </span>
-          <Icon name="chevron" className="text-muted" />
-        </button>
+          </button>
+          <button type="button" className="min-h-11 px-3 rounded-md text-sm font-semibold text-danger transition hover:bg-danger-soft mr-2" onClick={() => setToDelete(latest)} aria-label={`Delete shift on ${formatDateShort(latest.date)}`}>
+            Delete
+          </button>
+        </div>
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <Button variant="primary" size="lg" className="px-3 py-3 flex-col gap-0.5" onClick={() => navigate({ name: 'setup', mode: 'new' })}>
-          Lead coverage
-          <span className="text-xs font-medium opacity-80">Lead CA</span>
-        </Button>
-        <Button size="lg" className="px-3 py-3 flex-col gap-0.5" onClick={() => navigate({ name: 'quick-setup', mode: 'new' })}>
-          Quick sweep
-          <span className="text-xs font-medium text-muted">Support CA</span>
-        </Button>
+        <button
+          type="button"
+          onClick={() => navigate({ name: 'setup', mode: 'new' })}
+          className="flex flex-col items-start justify-end gap-1 min-h-32 rounded-2xl p-4 text-left text-white bg-gradient-to-br from-[#8f2645] to-[#561327] shadow-lg shadow-[#561327]/20 transition active:scale-[0.98]"
+        >
+          <span className="text-lg font-bold leading-tight">Lead coverage</span>
+          <span className="text-sm text-white/75">Lead CA</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate({ name: 'quick-setup', mode: 'new' })}
+          className="flex flex-col items-start justify-end gap-1 min-h-32 rounded-2xl p-4 text-left bg-surface shadow-[0_1px_3px_rgb(0_0_0/0.06)] transition hover:bg-surface-2 active:scale-[0.98]"
+        >
+          <span className="text-lg font-bold leading-tight">Quick sweep</span>
+          <span className="text-sm text-muted">Support CA</span>
+        </button>
       </div>
 
       {unfinished.length > 1 && <ShiftList title="Other unfinished shifts" shifts={unfinished.slice(1)} onDelete={setToDelete} />}
@@ -106,9 +125,9 @@ function ShiftList({ title, shifts, onDelete }: { title: string; shifts: Shift[]
                 {shiftSummary(s)} · {sweepsDone(s)}/{s.sweeps.length} sweeps
               </span>
             </button>
-            <Button variant="ghost" size="sm" onClick={() => onDelete(s)} aria-label={`Delete shift on ${formatDateShort(s.date)}`} className="text-danger">
+            <button type="button" onClick={() => onDelete(s)} aria-label={`Delete shift on ${formatDateShort(s.date)}`} className="min-h-11 px-3 rounded-md text-sm font-semibold text-danger transition hover:bg-danger-soft">
               Delete
-            </Button>
+            </button>
           </li>
         ))}
       </ul>

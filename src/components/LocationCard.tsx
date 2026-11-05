@@ -38,6 +38,7 @@ export function LocationCard({
   const [count, setCount] = useState(answered && entry.count !== undefined ? String(entry.count) : '')
   const [status, setStatus] = useState(answered ? (entry.status ?? '') : '')
   const [observation, setObservation] = useState(entry?.observation ?? '')
+  const [showObs, setShowObs] = useState(!!entry?.observation)
   const [warning, setWarning] = useState('')
   const countId = useId()
   const obsId = useId()
@@ -120,7 +121,7 @@ export function LocationCard({
           ))}
         </fieldset>
       ) : (
-        <div className="location-enter rounded-lg bg-surface border border-line/70 p-4 flex flex-col gap-4">
+        <div className="location-enter flex flex-col gap-5 py-2">
           <label htmlFor={countId} className="text-xs font-bold uppercase tracking-[0.08em] text-muted text-center">
             People present
           </label>
@@ -185,19 +186,27 @@ export function LocationCard({
         </div>
       )}
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor={obsId} className="text-sm font-semibold">
-          Observations <span className="font-normal text-muted">(optional)</span>
-        </label>
-        <textarea
-          id={obsId}
-          value={observation}
-          onChange={(e) => setObservation(e.target.value)}
-          rows={2}
-          placeholder="e.g. lights off, furniture moved, noise"
-          className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 focus:outline-none focus:ring-4 focus:ring-accent/15 focus:border-accent"
-        />
-      </div>
+      {/* The observation box stays tucked away until it's wanted (or already has text). */}
+      {showObs ? (
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor={obsId} className="text-sm font-semibold">
+            Observation
+          </label>
+          <textarea
+            id={obsId}
+            value={observation}
+            onChange={(e) => setObservation(e.target.value)}
+            rows={2}
+            autoFocus={!observation}
+            placeholder="e.g. lights off, furniture moved, noise"
+            className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 focus:outline-none focus:ring-4 focus:ring-accent/15 focus:border-accent"
+          />
+        </div>
+      ) : (
+        <Button variant="ghost" className="self-center text-accent" onClick={() => setShowObs(true)}>
+          <Icon name="plus" size={16} /> Add observation
+        </Button>
+      )}
 
       {warning && (
         <p role="alert" className="rounded-lg bg-warn-soft text-warn px-3 py-2 text-sm font-semibold">

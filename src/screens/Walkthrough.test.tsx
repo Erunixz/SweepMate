@@ -33,7 +33,7 @@ const bsweep = (sweepId: string, b: string) => latest!.sweeps.find((s) => s.id =
 const entries = (sweepId: string, b: string) => bsweep(sweepId, b)?.entries ?? {}
 const heading = () => screen.getByRole('heading', { level: 2 }).textContent
 
-it('saves an explicit zero, records Not Checked, and fills the building start time', () => {
+it('saves an explicit zero, skips an empty location without recording it, and fills the building start time', () => {
   const { sweepId } = setup()
   const route = getRoute('lp')
   expect(heading()).toBe(route[0]!.label)
@@ -41,9 +41,13 @@ it('saves an explicit zero, records Not Checked, and fills the building start ti
   fireEvent.click(screen.getByRole('button', { name: /save & next/i }))
   expect(entries(sweepId, 'lp')[route[0]!.id]).toMatchObject({ state: 'answered', count: 0 })
 
-  fireEvent.click(screen.getByRole('button', { name: /not checked/i }))
-  expect(entries(sweepId, 'lp')[route[1]!.id]).toMatchObject({ state: 'skipped' })
-  expect(entries(sweepId, 'lp')[route[2]!.id]).toBeUndefined()
+  expect(screen.queryByRole('button', { name: /not checked/i })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+  expect(heading()).toBe(route[2]!.label)
+  expect(entries(sweepId, 'lp')[route[1]!.id]).toBeUndefined()
+  // Typing a count turns Skip back into Save & Next.
+  fireEvent.change(screen.getByLabelText(/people present/i), { target: { value: '4' } })
+  expect(screen.getByRole('button', { name: /save & next/i })).toBeInTheDocument()
   expect(bsweep(sweepId, 'lp')!.actualStart).toMatch(/^\d\d:\d\d$/)
   expect(bsweep(sweepId, 'woodstock')).toBeUndefined()
 })
@@ -82,14 +86,19 @@ it('walks the full Woodstock route in exact order, then hands off to Les Prince'
     fireEvent.keyDown(input, { key: 'Enter' })
   })
   expect(route.map((l) => entries(sweepId, 'woodstock')[l.id]?.count)).toEqual(route.map((_, i) => i))
-  fireEvent.click(screen.getByRole('button', { name: /record woodstock end time/i }))
+  // Finishing the last room records the end time automatically; there's no button for it.
+  expect(screen.queryByRole('button', { name: /end time/i })).toBeNull()
   expect(bsweep(sweepId, 'woodstock')!.actualEnd).toMatch(/^\d\d:\d\d$/)
+  expect(screen.getByText(/^Ended at /)).toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: /continue to les prince/i }))
   expect(heading()).toBe(getRoute('lp')[0]!.label)
 })
 
 it('refuses to save without a value instead of inventing one', () => {
   const { sweepId } = setup()
+  // An observation without a count can't be saved as a silent 0.
+  fireEvent.click(screen.getByRole('button', { name: /add observation/i }))
+  fireEvent.change(screen.getByLabelText('Observation'), { target: { value: 'Door propped open' } })
   fireEvent.click(screen.getByRole('button', { name: /save & next/i }))
   expect(screen.getByRole('alert')).toHaveTextContent(/enter a count/i)
   expect(entries(sweepId, 'lp')).toEqual({})
@@ -121,7 +130,7 @@ it('lets you go back and edit a previous answer', () => {
   fireEvent.click(screen.getByRole('button', { name: /save & next/i }))
   fireEvent.click(screen.getByRole('button', { name: 'Back' }))
   expect(screen.getByLabelText(/people present/i)).toHaveValue(7)
-  fireEvent.click(screen.getByRole('button', { name: /increase count/i }))
+  fireEvent.change(screen.getByLabelText(/people present/i), { target: { value: '8' } })
   fireEvent.click(screen.getByRole('button', { name: /save & next/i }))
   expect(entries(sweepId, 'lp')[route[0]!.id]?.count).toBe(8)
 })

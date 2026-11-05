@@ -107,6 +107,10 @@ button, summary, select { touch-action: manipulation; }
 button:not(:disabled), summary { cursor: pointer; }
 input, select, textarea { min-width: 0; }
 
+/* Horizontal chip rows scroll by swipe without showing a scrollbar. */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 /*
  * iOS Safari draws date and time inputs natively: it centres the value, ignores the box width
  * (so the field overflows into its neighbour) and collapses an empty field to almost no height.

@@ -8,7 +8,7 @@ Read the [architecture guide](docs/architecture.md) before changing domain behav
 
 ## Changes to domain behavior
 
-- Keep unanswered, an answered zero, and Not Checked distinct.
+- Keep unanswered and an answered zero distinct. Skip leaves a location unanswered; it never records a value.
 - Preserve stable location and sweep IDs. A route reorder must not move saved counts between rooms.
 - Do not copy counts between sweeps or fill missing times/names with invented values.
 - Keep walking order independent from report order, including Les Prince's alternating wings and north-first report.

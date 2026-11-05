@@ -1,10 +1,11 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { LocationEntry, RouteLocation } from '../domain/types'
 import { cx } from './cx'
 import { Icon } from './Icon'
 import { Badge, Button } from './ui'
 
-const QUICK_COUNTS = [0, 1, 2, 3, 4, 5]
+/** One-tap counts in a swipeable row; anything higher can be typed. */
+const QUICK_COUNTS = Array.from({ length: 31 }, (_, n) => n)
 
 /** Only an answered or skipped location gets a badge; a new location needs no label. */
 function entryStateBadge(entry: LocationEntry) {
@@ -20,7 +21,7 @@ export function LocationCard({
   location,
   entry,
   onSave,
-  onSkip,
+  onNext,
   onClear,
   onBack,
   canGoBack,
@@ -28,7 +29,8 @@ export function LocationCard({
   location: RouteLocation
   entry: LocationEntry | undefined
   onSave: (draft: { count?: number; status?: string; observation: string }) => void
-  onSkip: (observation: string) => void
+  /** Move on without recording anything; the location stays unanswered. */
+  onNext: () => void
   onClear: () => void
   onBack: (draft: { count?: number; status?: string; observation: string } | null) => void
   canGoBack: boolean
@@ -40,6 +42,13 @@ export function LocationCard({
   const [observation, setObservation] = useState(entry?.observation ?? '')
   const [showObs, setShowObs] = useState(!!entry?.observation)
   const [warning, setWarning] = useState('')
+  const chipsRef = useRef<HTMLDivElement>(null)
+
+  // Keep the chip for the current count in view (e.g. after typing 25).
+  useEffect(() => {
+    const chip = chipsRef.current?.querySelector<HTMLElement>(`[data-count="${count}"]`)
+    chip?.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+  }, [count])
   const countId = useId()
   const obsId = useId()
 
@@ -52,9 +61,13 @@ export function LocationCard({
     observation !== (entry?.observation ?? '') ||
     (isStatus ? status !== (answered ? (entry.status ?? '') : '') : count !== (answered && entry.count !== undefined ? String(entry.count) : ''))
 
+  // Nothing entered: the main button skips ahead and the location stays [not recorded].
+  const skipping = !valid && !dirty
+
   const save = () => {
+    if (skipping) return onNext()
     if (!valid) {
-      setWarning(isStatus ? 'Choose a status, or use Not Checked.' : 'Enter a count (0 if empty), or use Not Checked.')
+      setWarning(isStatus ? 'Choose a status to save this location.' : 'Enter a count (0 if empty) to save this location.')
       return
     }
     onSave(draft())
@@ -63,14 +76,9 @@ export function LocationCard({
   const back = () => {
     if (!dirty) return onBack(null)
     if (valid) return onBack(draft())
-    setWarning('You have unsaved changes. Enter a value, use Not Checked, or clear them before going back.')
+    setWarning('You have unsaved changes. Enter a value or clear it before going back.')
   }
 
-  const step = (delta: number) => {
-    setWarning('')
-    const base = countValid ? (parsed as number) : 0
-    setCount(String(Math.max(0, Math.min(999, base + delta))))
-  }
 
   return (
     <div className="flex flex-col gap-5 pb-32">
@@ -121,62 +129,53 @@ export function LocationCard({
           ))}
         </fieldset>
       ) : (
-        <div className="location-enter flex flex-col gap-5 py-2">
-          <label htmlFor={countId} className="text-xs font-bold uppercase tracking-[0.08em] text-muted text-center">
+        <div className="location-enter flex flex-col gap-3">
+          <label htmlFor={countId} className="text-sm font-semibold">
             People present
           </label>
-          <div className="grid grid-cols-[4rem_1fr_4rem] items-center gap-2">
-            <button
-              type="button"
-              onClick={() => step(-1)}
-              aria-label="Decrease count"
-              disabled={!countValid || parsed === 0}
-              className="size-16 rounded-full bg-surface-2 text-fg grid place-items-center transition disabled:opacity-30"
-            >
-              <span aria-hidden="true" className="text-3xl leading-none font-medium">−</span>
-            </button>
-            <input
-              id={countId}
-              inputMode="numeric"
-              pattern="[0-9]*"
-              type="number"
-              min={0}
-              max={999}
-              value={count}
-              placeholder="–"
-              onChange={(e) => {
-                setCount(e.target.value.replace(/[^\d]/g, '').slice(0, 3))
-                setWarning('')
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  save()
-                }
-              }}
-              className="h-24 w-full bg-transparent text-center text-7xl font-semibold tracking-tight tabular-nums placeholder:text-line focus:outline-none rounded-lg focus:bg-surface-2/60"
-            />
-            <button
-              type="button"
-              onClick={() => step(1)}
-              aria-label="Increase count"
-              className="size-16 rounded-full bg-brand text-white grid place-items-center transition"
-            >
-              <span aria-hidden="true" className="text-3xl leading-none font-medium">+</span>
-            </button>
-          </div>
-          <div className="grid grid-cols-6 gap-1.5" role="group" aria-label="Quick counts">
+          {/* One clear box to type into; numeric keyboard on phones, Enter saves. */}
+          <input
+            id={countId}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            type="number"
+            min={0}
+            max={999}
+            value={count}
+            onChange={(e) => {
+              setCount(e.target.value.replace(/[^\d]/g, '').slice(0, 3))
+              setWarning('')
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                save()
+              }
+            }}
+            className={cx(
+              'h-20 w-full rounded-2xl border-2 border-line bg-surface px-4 text-center tabular-nums placeholder:text-muted/70 transition focus:outline-none focus:border-accent focus:ring-4 focus:ring-accent/15',
+              // Size the text to what's in the box so the hint and the number both sit centred.
+              count === '' ? 'text-lg' : 'text-5xl font-semibold tracking-tight',
+            )}
+          />
+          <div
+            ref={chipsRef}
+            role="group"
+            aria-label="Quick counts"
+            className="no-scrollbar -mx-4 px-4 flex gap-2 overflow-x-auto snap-x snap-mandatory scroll-px-4 [mask-image:linear-gradient(to_right,black_85%,transparent)]"
+          >
             {QUICK_COUNTS.map((n) => (
               <button
                 key={n}
                 type="button"
+                data-count={n}
                 onClick={() => {
                   setCount(String(n))
                   setWarning('')
                 }}
                 className={cx(
-                  'min-h-12 rounded-md text-base font-bold tabular-nums transition',
-                  count === String(n) ? 'bg-fg text-bg' : 'bg-surface-2 text-fg hover:bg-line/60',
+                  'size-12 shrink-0 snap-start rounded-full text-base font-semibold tabular-nums transition',
+                  count === String(n) ? 'bg-brand text-white' : 'bg-surface-2 text-fg hover:bg-line/60',
                 )}
               >
                 {n}
@@ -216,15 +215,12 @@ export function LocationCard({
 
       {/* Thumb-zone action bar */}
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line/60 bg-bg">
-        <div className="mx-auto max-w-2xl grid grid-cols-[3.5rem_auto_1fr] gap-2 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto max-w-2xl grid grid-cols-[3.5rem_1fr] gap-2 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Button size="lg" onClick={back} disabled={!canGoBack} aria-label="Back" className="px-0">
             <Icon name="back" size={22} />
           </Button>
-          <Button size="lg" variant="skip" onClick={() => onSkip(observation)} className="px-3 text-sm whitespace-nowrap">
-            Not Checked
-          </Button>
-          <Button size="lg" variant="primary" onClick={save} className="px-3 whitespace-nowrap">
-            Save &amp; Next
+          <Button size="lg" variant={skipping ? 'secondary' : 'primary'} onClick={save} className="px-3 whitespace-nowrap">
+            {skipping ? 'Skip' : 'Save & Next'}
           </Button>
         </div>
       </div>

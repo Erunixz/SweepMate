@@ -36,7 +36,7 @@ Shift
   extraNotes, reportDraft
 ```
 
-An absent location entry means unanswered. An answered entry can contain a real count of zero. A skipped entry represents Not Checked. Reports preserve those states as recorded values, `[not recorded]`, and `[not checked]` respectively.
+An absent location entry means unanswered. An answered entry can contain a real count of zero. Reports show these as the recorded value or `[not recorded]`. The walkthrough's Skip button moves on without writing anything. A skipped entry (the former Not Checked button) can still appear in older records and is reported as `[not checked]`.
 
 Counts belong to a specific sweep and building. No operation uses a previous sweep's answers to prefill another sweep. Building CAs use an explicit per-sweep override when supplied, otherwise the shift's building defaults. `null` means use defaults; an empty override means no names are recorded.
 

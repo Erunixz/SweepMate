@@ -41,9 +41,9 @@ The app opens directly in a browser without an account. Large controls, light an
 Open [sweep-mate.vercel.app](https://sweep-mate.vercel.app/). No installation or account is required, and test entries can be deleted from the home screen afterwards. The same walkthrough works [locally](#run-locally).
 
 1. Tap **Lead coverage**, add a couple of CA names, and start the shift.
-2. Tap **Start Woodstock**. Record **0** for an empty room, then use **Not Checked** on the next location.
+2. Tap **Start Woodstock**. Record **0** for an empty room, then tap **Skip** on the next location to leave it blank.
 3. Tap **Note** during the walkthrough and see its time, sweep and location prefilled.
-4. Open **Report** to compare recorded values, `[not checked]`, and `[not recorded]`. Copy the full report, or a single sweep, for StarRez.
+4. Open **Report** to compare recorded values and `[not recorded]`. Copy the full report, or a single sweep, for StarRez.
 5. Return home and try **Quick sweep**, the single-building workflow for support CAs, with no Lead CA setup.
 
 ```text
@@ -62,7 +62,7 @@ Copy or download the report
 | --- | --- |
 | Lead coverage | Three-step setup, CA assignments, editable schedules, per-building start/end times, and a combined report |
 | Quick sweep | One building, a date/time, optional CA names, and a building-only report |
-| Guided rounds | Configurable routes, count shortcuts, keyboard entry, Not Checked, observations, and revisiting rooms |
+| Guided rounds | Configurable routes, a type-in count box with 0–5 shortcuts, Skip for rooms that can't be checked, observations, and revisiting rooms |
 | Overnight scheduling | Every shift runs 9 PM–8 AM. Weekdays sweep at 9 PM and 11 PM; weekends also include 1 AM the next day. Times can be adjusted in setup |
 | Mid-shift changes | Add sweeps from the overview, reject duplicate times, and retain existing sweep records when reordering |
 | Notes and follow-up | General notes, maintenance, Incident Reports, Students of Concern, and follow-up status |

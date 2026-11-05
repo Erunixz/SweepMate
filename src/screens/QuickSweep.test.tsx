@@ -25,11 +25,12 @@ it.each([['Woodstock', 'woodstock', 'Les Prince'], ['Les Prince', 'lp', 'Woodsto
       fireEvent.click(screen.getByRole('button', { name: '0' }))
       fireEvent.click(screen.getByRole('button', { name: /save & next/i }))
     } else {
-      fireEvent.click(screen.getByRole('button', { name: /not checked/i }))
+      fireEvent.click(screen.getByRole('button', { name: '2' }))
+      fireEvent.click(screen.getByRole('button', { name: /save & next/i }))
     }
   })
   expect(screen.queryByRole('button', { name: new RegExp(`Continue to ${other}`) })).toBeNull()
-  fireEvent.click(screen.getByRole('button', { name: new RegExp(`Record ${name} end time`) }))
+  expect(screen.getByText(/^Ended at /)).toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Overview' }))
   expect(screen.queryByRole('button', { name: 'Add sweep' })).toBeNull()
   expect(screen.queryByText('On coverage')).toBeNull()
@@ -41,7 +42,7 @@ it.each([['Woodstock', 'woodstock', 'Les Prince'], ['Les Prince', 'lp', 'Woodsto
   const report = screen.getByLabelText('Preview') as HTMLTextAreaElement
   expect(report.value).toContain('CAs: Sam and Jo')
   expect(report.value).toContain('0 in ')
-  expect(report.value).toContain('[not checked]')
+  expect(report.value).toContain('2 in ')
   expect(report.value).toContain('Door secured.')
   expect(report.value).not.toContain('[not recorded]')
   expect(report.value).not.toContain(other)

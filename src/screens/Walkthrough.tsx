@@ -46,6 +46,14 @@ export function Walkthrough({ sweepId, buildingId, index }: { sweepId: string; b
       return next
     })
 
+  // Leaving the last location finishes the building: its end time fills in automatically
+  // (only if it isn't set yet, so revisiting a room later doesn't move it).
+  const next = () => {
+    if (index === route.length - 1)
+      updateActive((s) => updateBuildingSweep(s, sweepId, buildingId, (b) => ({ ...b, actualEnd: b.actualEnd || nowTime() })))
+    go(index + 1)
+  }
+
   const answered = (draft: { count?: number; status?: string; observation: string }): LocationEntry => ({
     state: 'answered',
     ...(draft.count !== undefined ? { count: draft.count } : {}),
@@ -99,12 +107,9 @@ export function Walkthrough({ sweepId, buildingId, index }: { sweepId: string; b
             canGoBack={index > 0}
             onSave={(draft) => {
               write(location, answered(draft))
-              go(index + 1)
+              next()
             }}
-            onSkip={(observation) => {
-              write(location, { state: 'skipped', observation: observation.trim(), updatedAt: new Date().toISOString() })
-              go(index + 1)
-            }}
+            onNext={next}
             onClear={() => write(location, null)}
             onBack={(draft) => {
               if (draft) write(location, answered(draft))
@@ -203,7 +208,7 @@ function LocationList({
 }
 
 function BuildingSummary({ sweepId, buildingId, onJump }: { sweepId: string; buildingId: string; onJump: (i: number) => void }) {
-  const { shift, navigate, updateActive } = useActiveShift()
+  const { shift, navigate } = useActiveShift()
   const sweep = shift.sweeps.find((s) => s.id === sweepId)!
   const p = buildingProgress(sweep, buildingId)
   const route = getRoute(buildingId)
@@ -221,29 +226,17 @@ function BuildingSummary({ sweepId, buildingId, onJump }: { sweepId: string; bui
       <div className="flex flex-wrap gap-2">
         <Badge tone="ok">{p.answered} answered</Badge>
         {p.skipped > 0 && <Badge tone="skip">{p.skipped} not checked</Badge>}
-        {p.unanswered > 0 && <Badge tone="warn">{p.unanswered} unanswered</Badge>}
+        {p.unanswered > 0 && <Badge tone="warn">{p.unanswered} skipped</Badge>}
       </div>
       {firstMissing >= 0 && (
         <Button variant="secondary" size="lg" onClick={() => onJump(firstMissing)}>
-          Go to first unanswered location
+          Go to skipped
         </Button>
       )}
-      {!bs?.actualEnd ? (
-        <Button
-          variant="primary"
-          size="lg"
-          onClick={() => updateActive((s) => updateBuildingSweep(s, sweepId, buildingId, (b) => ({ ...b, actualEnd: nowTime() })))}
-        >
-          Record {name} end time ({formatTime12(nowTime())})
-        </Button>
-      ) : (
-        <p className="text-sm text-muted">
-          {name} ended at {formatTime12(bs.actualEnd)}. Edit times from the details bar above.
-        </p>
-      )}
+      {bs?.actualEnd && <p className="text-sm text-muted">Ended at {formatTime12(bs.actualEnd)}</p>}
       {nextBuilding && (
         <Button
-          variant={bs?.actualEnd ? 'primary' : 'secondary'}
+          variant="primary"
           size="lg"
           onClick={() => navigate({ name: 'walk', sweepId, buildingId: nextBuilding.id, index: Math.max(0, getRoute(nextBuilding.id).findIndex((l) => !sweep.buildings[nextBuilding.id]?.entries[l.id])) })}
         >

@@ -3,19 +3,17 @@ import { BottomNav } from '../components/BottomNav'
 import { Icon } from '../components/Icon'
 import { SaveIndicator } from '../components/SaveIndicator'
 import { ConfirmSheet } from '../components/Sheet'
-import { Button, Card, Header, Page, TextInput } from '../components/ui'
-import { TEMPLATE_FIELD_HELP, type ReportTemplate } from '../config/reportTemplate'
+import { Button, Card, Header, Page } from '../components/ui'
+import { DEFAULT_REPORT_TEMPLATE as template } from '../config/reportTemplate'
 import { canShareText, copyText, downloadText, shareText } from '../domain/clipboard'
 import { missingDetails, missingEntries } from '../domain/progress'
 import { cleanText, generateReport, generateSweepSection, reportFileName } from '../domain/report'
 import { getBuilding, getRoute } from '../domain/route'
 import { formatTime12, labelShiftTime } from '../domain/time'
-import { useReportTemplate } from '../state/reportTemplate'
 import { useActiveShift } from '../state/store'
 
 export function Report() {
   const { shift, navigate, updateActive } = useActiveShift()
-  const { template, update, reset } = useReportTemplate()
   const [toast, setToast] = useState('')
   const [confirmRegen, setConfirmRegen] = useState(false)
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -47,13 +45,9 @@ export function Report() {
 
   return (
     <>
-      <Header title={quick ? 'Building report' : 'Coverage report'} subtitle={quick ? `${getBuilding(shift.quickBuildingId!)?.name} · plain text` : `${shift.sweeps.length} sweeps · plain text`} right={<SaveIndicator />} />
+      <Header title={quick ? `${getBuilding(shift.quickBuildingId!)?.name} report` : 'Coverage report'} subtitle="Ready to paste into StarRez" right={<SaveIndicator />} />
       <Page className="pb-28">
         <section className="border-b border-line pb-5 flex flex-col gap-4">
-          <div>
-            <h2 className="text-xl font-semibold">Export report</h2>
-            <p className="text-muted text-sm">{quick ? 'Your building’s counts, times and notes.' : 'Every sweep in one entry, in your report format.'}</p>
-          </div>
           <div className={`grid gap-2 ${canShare ? 'grid-cols-[1fr_auto_auto]' : 'grid-cols-[1fr_auto]'}`}>
             <Button
               variant="primary"
@@ -79,7 +73,7 @@ export function Report() {
           </div>
         </section>
 
-        {totalMissing > 0 ? (
+        {totalMissing > 0 && (
           <details className="rounded-lg bg-warn-soft text-warn p-4 group">
             <summary className="flex items-center gap-2 cursor-pointer font-bold min-h-11 list-none">
               <span className="flex-1">
@@ -89,7 +83,6 @@ export function Report() {
               <span className="text-xs font-semibold hidden group-open:inline">Hide</span>
             </summary>
             <div className="flex flex-col gap-3 pt-2 text-fg">
-              <p className="text-sm text-warn">They appear as “{template.unanswered}” in the report.</p>
               {missing.length > 0 && (
                 <ul className="flex flex-col gap-1">
                   {missing.map((g) => (
@@ -127,10 +120,6 @@ export function Report() {
               )}
             </div>
           </details>
-        ) : (
-          <p className="rounded-lg bg-ok-soft text-ok px-4 py-3 text-sm font-semibold flex items-center gap-2">
-            <Icon name="check" size={16} /> Everything is recorded.
-          </p>
         )}
 
         <Card className="flex flex-col gap-2">
@@ -160,10 +149,7 @@ export function Report() {
           <ul className="flex flex-col divide-y divide-line/70">
             {shift.sweeps.map((s, i) => (
               <li key={s.id} className="flex items-center gap-2 py-1.5">
-                <span className="flex-1 text-sm">
-                  <span className="font-semibold">{labelShiftTime(shift.startTime, s.scheduledTime)}</span>
-                  <span className="text-muted"> · Sweep {i + 1}</span>
-                </span>
+                <span className="flex-1 text-sm font-semibold">{labelShiftTime(shift.startTime, s.scheduledTime)}</span>
                 <Button
                   size="sm"
                   onClick={() => copy(generateSweepSection(shift, i, template), `${formatTime12(s.scheduledTime)} sweep`)}
@@ -177,7 +163,6 @@ export function Report() {
           </ul>
         </Card>}
 
-        {!quick && <TemplateEditor template={template} onChange={update} onReset={reset} />}
       </Page>
 
       <div aria-live="polite" className="fixed inset-x-0 bottom-24 z-40 flex justify-center pointer-events-none">
@@ -199,38 +184,5 @@ export function Report() {
         onClose={() => setConfirmRegen(false)}
       />
     </>
-  )
-}
-
-function TemplateEditor({
-  template,
-  onChange,
-  onReset,
-}: {
-  template: ReportTemplate
-  onChange: (t: ReportTemplate) => void
-  onReset: () => void
-}) {
-  return (
-    <details className="rounded-lg bg-surface border border-line p-4 group">
-      <summary className="font-bold cursor-pointer min-h-11 flex items-center">Report template</summary>
-      <div className="flex flex-col gap-3 pt-2">
-        <p className="text-xs text-muted">
-          Changes apply to all shifts on this device. If you've edited the preview text, regenerate it to see template changes.
-        </p>
-        {(Object.keys(TEMPLATE_FIELD_HELP) as (keyof ReportTemplate)[]).map((key) => (
-          <TextInput
-            key={key}
-            label={key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase())}
-            hint={TEMPLATE_FIELD_HELP[key]}
-            value={template[key]}
-            onChange={(e) => onChange({ ...template, [key]: e.target.value })}
-          />
-        ))}
-        <Button onClick={onReset} className="self-start">
-          Reset template to default
-        </Button>
-      </div>
-    </details>
   )
 }

@@ -34,7 +34,6 @@ export function CAPicker({
                   on ? 'border-accent bg-accent-soft text-accent' : 'border-line bg-surface text-muted',
                 )}
               >
-                {on && <span aria-hidden="true">✓ </span>}
                 {name}
               </button>
             )

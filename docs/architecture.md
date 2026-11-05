@@ -68,10 +68,10 @@ Older stored shifts normalize to `mode: 'full'` and `quickBuildingId: null`. Inv
 | Storage | Key | Contents |
 | --- | --- | --- |
 | localStorage | `sweepmate:v1:shifts` | Real shifts in a versioned envelope |
-| localStorage | `sweepmate:v1:demo` | Fictional demo record |
+| localStorage | `sweepmate:v1:demo` | Former demo record; removed on load |
 | localStorage | `sweepmate:v1:backup-*` | Best-effort raw backups when damaged shift data is detected |
 | localStorage | `sweepmate:schedules` | User-saved schedule defaults |
-| localStorage | `sweepmate:report-template` | Report wording preferences |
+| localStorage | `sweepmate:report-template` | Former report wording overrides; no longer read (the StarRez format is fixed) |
 | localStorage | `sweepmate:theme` | Theme preference |
 | sessionStorage | `sweepmate:v1:session` | Active shift ID and screen within the current tab |
 
@@ -81,7 +81,7 @@ This keeps setup small but has limits: saves serialize the shift collection sync
 
 ## Report editing
 
-[report.ts](../src/domain/report.ts) generates text from recorded state and template preferences. A user-edited `reportDraft` takes precedence over generated text. Changes to counts do not silently overwrite that draft; regeneration is explicit. Copy/download both use the resulting text.
+[report.ts](../src/domain/report.ts) generates text from recorded state and the fixed StarRez template. A user-edited `reportDraft` takes precedence over generated text. Changes to counts do not silently overwrite that draft; regeneration is explicit. Copy/download both use the resulting text.
 
 ## Interface decisions
 

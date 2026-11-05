@@ -2,7 +2,7 @@
 
 **A mobile-first tool for overnight residence rounds, from the first room count to the final coverage report.**
 
-[**Open the live app**](https://sweep-mate.vercel.app/) · [Try the demo](#try-the-workflow) · [Explore the architecture](docs/architecture.md)
+[**Open the live app**](https://sweep-mate.vercel.app/) · [Try the workflow](#try-the-workflow) · [Explore the architecture](docs/architecture.md)
 
 Built for the Princestock workflow at Woodstock and Les Prince, SweepMate helps Community Advisors (CAs) keep track of overnight building rounds. It brings the route, room counts, observations, and final coverage report into one mobile-friendly workflow.
 
@@ -20,7 +20,7 @@ That purpose shapes the small details. Woodstock's route visits the basement bef
 
 ## Who it is for
 
-- **Lead CA (Start Shift):** runs the night's full coverage. Plan the sweeps, record who covers each building, track progress, and copy the combined report, or a single sweep, into StarRez.
+- **Lead CA (Lead coverage):** runs the night's full coverage. Plan the sweeps, record who covers each building, track progress, and copy the combined report, or a single sweep, into StarRez.
 - **Support CAs (Quick sweep):** help the lead with individual sweeps. Record one building's route and copy that building's section without setting up the whole coverage shift.
 - **Anyone returning to unfinished work:** resume saved rounds, revisit a room, and keep observations and follow-up notes attached to the relevant sweep.
 
@@ -38,16 +38,16 @@ The app opens directly in a browser without an account. Large controls, light an
 
 [![SweepMate video tutorial](docs/media/sweepmate-tutorial-poster.jpg)](docs/media/sweepmate-tutorial.mp4)
 
-Open [sweep-mate.vercel.app](https://sweep-mate.vercel.app/) and select **Try a demo shift** on the Princestock start screen. No installation, setup, or account is required. The demo contains fictional data and is stored separately from real shifts. The same walkthrough works [locally](#run-locally).
+Open [sweep-mate.vercel.app](https://sweep-mate.vercel.app/). No installation or account is required, and test entries can be deleted from the home screen afterwards. The same walkthrough works [locally](#run-locally).
 
-1. Open the completed **9:00 PM** sweep to inspect progress in both buildings.
-2. Continue the **11:00 PM** Woodstock sweep. Record **0** for an empty room, then use **Not Checked** on the next location.
-3. Add a note during the walkthrough and see its location and sweep prefilled.
-4. Open **Report** to compare recorded values, `[not checked]`, and `[not recorded]`. Copy the report or download a TXT file.
+1. Tap **Lead coverage**, add a couple of CA names, and start the shift.
+2. Tap **Start Woodstock**. Record **0** for an empty room, then use **Not Checked** on the next location.
+3. Tap **Note** during the walkthrough and see its time, sweep and location prefilled.
+4. Open **Report** to compare recorded values, `[not checked]`, and `[not recorded]`. Copy the full report, or a single sweep, for StarRez.
 5. Return home and try **Quick sweep**, the single-building workflow for support CAs, with no Lead CA setup.
 
 ```text
-Set up a shift or quick sweep
+Start Lead coverage or a Quick sweep
               |
 Walk the route and record each room
               |
@@ -60,14 +60,14 @@ Copy or download the report
 
 | Workflow | What it supports |
 | --- | --- |
-| Full coverage | Three-step setup, CA assignments, editable schedules, per-building start/end times, and a combined report |
+| Lead coverage | Three-step setup, CA assignments, editable schedules, per-building start/end times, and a combined report |
 | Quick sweep | One building, a date/time, optional CA names, and a building-only report |
 | Guided rounds | Configurable routes, count shortcuts, keyboard entry, Not Checked, observations, and revisiting rooms |
 | Overnight scheduling | Weekday sweeps at 9 PM and 11 PM; weekend and peak shifts also include 1 AM the next day; saved defaults override presets |
 | Mid-shift changes | Add sweeps from the overview, reject duplicate times, and retain existing sweep records when reordering |
 | Notes and follow-up | General notes, maintenance, Incident Reports, Students of Concern, and follow-up status |
-| Reporting | Missing-detail checks, editable report text, template preferences, copy, and TXT download |
-| Local persistence | Autosave, resume after refresh, older-save normalization, and separate demo storage |
+| Reporting | StarRez format, missing-detail checks, editable report text, copy the full report or one sweep, and TXT download |
+| Local persistence | Autosave, resume after refresh, older-save normalization, and a warning if a save fails |
 | Offline app | Installable to the home screen, opens with no signal after the first visit, and asks before reloading for updates |
 | Sharing | Copy, system share sheet on supported devices, and TXT download |
 | Interface | Maroon light/dark themes, large touch controls, labelled inputs, keyboard focus states, and reduced-motion support |
@@ -86,7 +86,7 @@ The engineering decisions follow the needs of the shift: preserve observations, 
 | Normalize saved JSON at the storage boundary | Older records can load with defaults; invalid shifts are detected | [Storage](src/domain/storage.ts), [migration tests](src/domain/storage.test.ts) |
 | Reuse the recording model for both modes | Quick sweeps share the same route, note, and persistence behavior | [Quick-sweep domain tests](src/domain/quickShift.test.ts), [workflow tests](src/screens/QuickSweep.test.tsx) |
 
-The current suite has **69 automated tests** covering routes, overnight schedules, saved records, report output, and UI workflows. See the [testing guide](docs/testing.md) for the checks and how to run them.
+The current suite has **67 automated tests** covering routes, overnight schedules, saved records, report output, and UI workflows. See the [testing guide](docs/testing.md) for the checks and how to run them.
 
 ### Suggested code-review path
 

@@ -1,7 +1,6 @@
-import { createDemoShift } from './demo'
 import { getRoute } from './route'
 import { createNote, setEntry, updateBuildingSweep, upsertNote } from './shift'
-import { BACKUP_PREFIX, DEMO_KEY, SHIFTS_KEY, loadAll, saveDemo, saveShifts } from './storage'
+import { BACKUP_PREFIX, DEMO_KEY, SHIFTS_KEY, loadAll, saveShifts } from './storage'
 import { testShift } from './testShift'
 
 function memoryStorage() {
@@ -55,15 +54,15 @@ it('round-trips every field of a shift', () => {
   expect(shifts[0]).toEqual(s)
 })
 
-it('keeps demo data out of the real shift list', () => {
+it('drops demo shifts left by older versions', () => {
   const st = memoryStorage()
-  const demo = createDemoShift()
-  saveShifts([fullShift(), demo], st)
-  saveDemo(demo, st)
-  const { shifts, demo: loadedDemo } = loadAll(st)
-  expect(shifts.every((s) => !s.isDemo)).toBe(true)
-  expect(JSON.parse(st.map.get(SHIFTS_KEY)!).shifts).toHaveLength(1)
-  expect(loadedDemo?.id).toBe(demo.id)
+  const real = fullShift()
+  st.setItem(SHIFTS_KEY, JSON.stringify({ version: 1, shifts: [real, { ...testShift(), isDemo: true }] }))
+  st.setItem(DEMO_KEY, JSON.stringify({ ...testShift(), isDemo: true }))
+  const r = loadAll(st)
+  expect(r.shifts.map((s) => s.id)).toEqual([real.id])
+  expect(r.problem).toBeNull()
+  expect(st.map.has(DEMO_KEY)).toBe(false)
 })
 
 it('backs up and recovers from unparseable data', () => {
@@ -83,13 +82,6 @@ it('loads valid shifts and reports partial damage', () => {
   const r = loadAll(st)
   expect(r.problem).toBe('partial')
   expect(r.shifts).toHaveLength(1)
-})
-
-it('discards a damaged demo silently', () => {
-  const st = memoryStorage()
-  st.setItem(DEMO_KEY, '[]')
-  expect(loadAll(st).demo).toBeNull()
-  expect(st.map.has(DEMO_KEY)).toBe(false)
 })
 
 it('reports unavailable storage', () => {

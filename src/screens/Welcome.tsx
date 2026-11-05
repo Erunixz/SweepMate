@@ -21,7 +21,7 @@ function shiftSummary(shift: Shift) {
 }
 
 export function Welcome() {
-  const { shifts, demo, openShift, startDemo, navigate, deleteShift } = useStore()
+  const { shifts, openShift, navigate, deleteShift } = useStore()
   const [toDelete, setToDelete] = useState<Shift | null>(null)
   const unfinished = shifts.filter((s) => !s.finished)
   const finished = shifts.filter((s) => s.finished)
@@ -29,21 +29,14 @@ export function Welcome() {
 
   return (
     <Page className="min-h-dvh py-6 gap-6">
-      <div className="flex items-center justify-between border-b border-line pb-4">
-        <span className="text-sm font-semibold tracking-wide">SweepMate</span>
-        <ThemeToggle />
-      </div>
-
       <LoadProblemBanner />
 
-      <div className="pt-3 pb-6 border-b border-line">
-        <h1 className="residence-title text-5xl sm:text-6xl text-accent">Princestock</h1>
-        <p className="mt-3 text-sm text-muted">Woodstock &amp; Les Prince</p>
-      </div>
-
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold">Shifts</h2>
-        {unfinished.length > 0 && <Badge tone="accent">{unfinished.length} active</Badge>}
+      <div className="flex items-start justify-between gap-3 pt-3 pb-6 border-b border-line">
+        <div>
+          <h1 className="residence-title text-5xl sm:text-6xl text-accent">Princestock</h1>
+          <p className="mt-3 text-sm text-muted">Woodstock &amp; Les Prince</p>
+        </div>
+        <ThemeToggle />
       </div>
 
       {latest && (
@@ -54,39 +47,29 @@ export function Welcome() {
           className="flex items-center gap-4 rounded-lg bg-surface border border-line border-l-4 border-l-accent p-4 text-left transition hover:bg-surface-2"
         >
           <span className="flex-1 min-w-0">
-            <span className="flex items-center gap-2 text-xs font-semibold text-accent">Continue shift {latest.mode === 'quick' && <Badge tone="accent">Quick</Badge>}</span>
+            <span className="block text-xs font-semibold text-accent">Continue</span>
             <span className="block text-lg font-bold tracking-tight">{formatDateShort(latest.date)}</span>
-            <span className="block text-sm text-muted truncate">{shiftSummary(latest)}</span>
-            <span className="block text-xs text-muted mt-2">{sweepsDone(latest)} of {latest.sweeps.length} sweeps complete</span>
+            <span className="block text-sm text-muted truncate">
+              {shiftSummary(latest)} · {sweepsDone(latest)}/{latest.sweeps.length} sweeps
+            </span>
           </span>
           <Icon name="chevron" className="text-muted" />
         </button>
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <Button variant="primary" size="lg" className="px-3" onClick={() => navigate({ name: 'setup', mode: 'new' })}>
-          <Icon name="plus" />
-          Start Shift
+        <Button variant="primary" size="lg" className="px-3 py-3 flex-col gap-0.5" onClick={() => navigate({ name: 'setup', mode: 'new' })}>
+          Lead coverage
+          <span className="text-xs font-medium opacity-80">Lead CA</span>
         </Button>
-        <Button size="lg" className="px-3" onClick={() => navigate({ name: 'quick-setup', mode: 'new' })}>
-          <Icon name="play" size={16} /> Quick sweep
+        <Button size="lg" className="px-3 py-3 flex-col gap-0.5" onClick={() => navigate({ name: 'quick-setup', mode: 'new' })}>
+          Quick sweep
+          <span className="text-xs font-medium text-muted">Support CA</span>
         </Button>
       </div>
 
       {unfinished.length > 1 && <ShiftList title="Other unfinished shifts" shifts={unfinished.slice(1)} onDelete={setToDelete} />}
       {finished.length > 0 && <ShiftList title="Past shifts" shifts={finished} onDelete={setToDelete} />}
-
-      <div className="mt-auto flex flex-col items-start gap-1 border-t border-line pt-4">
-        <Button variant="ghost" size="sm" onClick={startDemo}>
-          {demo ? 'Open demo shift' : 'Try a demo shift'}
-        </Button>
-        <p className="text-xs text-muted">Fictional data, kept separate from real shifts.</p>
-        {demo && (
-          <Button variant="ghost" size="sm" className="text-xs text-danger" onClick={() => setToDelete(demo)}>
-            Delete demo shift
-          </Button>
-        )}
-      </div>
 
       <ConfirmSheet
         open={!!toDelete}
@@ -117,7 +100,7 @@ function ShiftList({ title, shifts, onDelete }: { title: string; shifts: Shift[]
           <li key={s.id} className="flex items-center gap-1 pr-2">
             <button type="button" onClick={() => openShift(s)} className="flex-1 min-w-0 text-left min-h-14 px-4 py-2.5 hover:bg-surface-2">
               <span className="flex items-center gap-2 font-semibold">
-                {formatDateShort(s.date)} {s.mode === 'quick' && <Badge tone="accent">Quick</Badge>} {s.finished && <Badge tone="ok">Finished</Badge>}
+                {formatDateShort(s.date)} {s.mode === 'quick' && <Badge tone="accent">Quick</Badge>}
               </span>
               <span className="block text-xs text-muted truncate">
                 {shiftSummary(s)} · {sweepsDone(s)}/{s.sweeps.length} sweeps

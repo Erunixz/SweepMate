@@ -1,15 +1,14 @@
 import { useState } from 'react'
 import { BottomNav } from '../components/BottomNav'
-import { cx } from '../components/cx'
 import { Icon } from '../components/Icon'
 import { NoteSheet } from '../components/NoteSheet'
 import { SaveIndicator } from '../components/SaveIndicator'
 import { ConfirmSheet } from '../components/Sheet'
 import { Badge, Button, Card, Header, Page, TextArea } from '../components/ui'
-import { NOTE_KIND_ORDER, NOTE_KINDS } from '../config/noteKinds'
+import { NOTE_KINDS } from '../config/noteKinds'
 import { deleteNote, sortNotes } from '../domain/shift'
 import { labelShiftTime } from '../domain/time'
-import type { Note, NoteKind } from '../domain/types'
+import type { Note } from '../domain/types'
 import { useActiveShift } from '../state/store'
 
 const statusTone = (n: Note) =>
@@ -20,52 +19,31 @@ export function Notes() {
   const [editing, setEditing] = useState<Note | null>(null)
   const [adding, setAdding] = useState(false)
   const [toDelete, setToDelete] = useState<Note | null>(null)
-  const [filter, setFilter] = useState<NoteKind | 'all'>('all')
 
   const sweepLabel = (id: string | null) => {
     const i = shift.sweeps.findIndex((s) => s.id === id)
     return i >= 0 ? `Sweep ${i + 1}` : 'Shift'
   }
-  const notes = sortNotes(shift, filter === 'all' ? shift.notes : shift.notes.filter((n) => n.kind === filter))
+  const notes = sortNotes(shift, shift.notes)
 
   return (
     <>
-      <Header title="Notes & incidents" subtitle="Printed under Extra Notes in the report" right={<SaveIndicator />} />
+      <Header title="Notes" right={<SaveIndicator />} />
       <Page className="pb-44">
         <Card className="flex flex-col gap-2">
           <TextArea
             label="Extra Notes"
-            hint="Free text, printed under Extra Notes in the report (one line per entry). Use Add note below for timed entries."
             value={shift.extraNotes}
             rows={3}
             onChange={(e) => updateActive((s) => ({ ...s, extraNotes: e.target.value, updatedAt: new Date().toISOString() }))}
           />
         </Card>
-        <div className="flex gap-1.5 overflow-x-auto -mx-4 px-4 pb-1" role="group" aria-label="Filter notes">
-          {(['all', ...NOTE_KIND_ORDER] as const).map((k) => (
-            <button
-              key={k}
-              type="button"
-              aria-pressed={filter === k}
-              onClick={() => setFilter(k)}
-              className={cx(
-                'shrink-0 min-h-10 rounded-md px-4 text-sm font-semibold border transition',
-                filter === k ? 'bg-fg text-bg border-fg' : 'bg-surface text-muted border-line hover:text-fg',
-              )}
-            >
-              {k === 'all' ? 'All' : NOTE_KINDS[k].short}{' '}
-              <span className="opacity-60">{k === 'all' ? shift.notes.length : shift.notes.filter((n) => n.kind === k).length}</span>
-            </button>
-          ))}
-        </div>
-
         {notes.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <div aria-hidden="true" className="size-12 rounded-lg bg-accent-soft text-accent grid place-items-center">
               <Icon name="notes" size={22} />
             </div>
             <p className="font-semibold">No notes yet</p>
-            <p className="text-sm text-muted max-w-xs">Observations, maintenance, IRs, SOCs and follow-ups you add during the shift show up here.</p>
           </div>
         )}
 

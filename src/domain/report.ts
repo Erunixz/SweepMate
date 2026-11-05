@@ -111,7 +111,6 @@ function noteBlock(note: Note, t: ReportTemplate): string {
 
 export function generateReport(shift: Shift, t: ReportTemplate = DEFAULT_REPORT_TEMPLATE): string {
   const blocks: string[] = []
-  if (shift.isDemo) blocks.push('[DEMO - fictional data, not a real report]')
 
   if (shift.mode === 'full') {
     const times = shift.sweeps.map((s) => formatTime12(s.scheduledTime))
@@ -154,5 +153,5 @@ export function cleanText(s: string): string {
 }
 
 export function reportFileName(shift: Shift): string {
-  return `${shift.isDemo ? 'DEMO-' : ''}${shift.mode === 'quick' ? `quick-sweep-${shift.quickBuildingId}` : 'coverage-report'}-${shift.date}.txt`
+  return `${shift.mode === 'quick' ? `quick-sweep-${shift.quickBuildingId}` : 'coverage-report'}-${shift.date}.txt`
 }

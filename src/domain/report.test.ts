@@ -147,9 +147,8 @@ it('includes per-location observations without changing counts', () => {
   expect(generateSweepSection(s, 0)).toContain('Games room: 9.\n\nGames room: Loud music. Asked to lower volume.\n\nEnd time')
 })
 
-it('says "None." when there are no extra notes, marks demos, and outputs clean text', () => {
-  const r = generateReport({ ...testShift(), isDemo: true })
-  expect(r.startsWith('[DEMO')).toBe(true)
+it('says "None." when there are no extra notes and outputs clean text', () => {
+  const r = generateReport(testShift())
   expect(r).toContain('Extra Notes:\nNone.')
   expect(r).not.toMatch(/[ \t]+\n/)
   expect(r).not.toMatch(/\n{3,}/)

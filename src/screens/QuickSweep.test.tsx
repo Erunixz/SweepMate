@@ -7,7 +7,7 @@ beforeEach(() => { localStorage.clear(); sessionStorage.clear() })
 
 it.each([['Woodstock', 'woodstock', 'Les Prince'], ['Les Prince', 'lp', 'Woodstock']])('walks, resumes, edits and exports a quick sweep of %s', (name, id, other) => {
   const first = render(<App />)
-  fireEvent.click(screen.getByRole('button', { name: 'Quick sweep' }))
+  fireEvent.click(screen.getByRole('button', { name: /^Quick sweep/ }))
   fireEvent.click(screen.getByRole('radio', { name }))
   expect(screen.queryByLabelText('Coverage phone pick-up')).toBeNull()
   expect(screen.queryByText('Shift type')).toBeNull()
@@ -51,7 +51,8 @@ it.each([['Woodstock', 'woodstock', 'Les Prince'], ['Les Prince', 'lp', 'Woodsto
   first.unmount()
   sessionStorage.clear()
   render(<App />)
-  expect(screen.getByText('Quick')).toBeInTheDocument()
+  // The resume card names the building instead of a shift type.
+  expect(screen.getByText(new RegExp(`^${name} · `))).toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: /Resume Shift/ }))
   expect(screen.queryByText(other)).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Mark sweep finished' }))

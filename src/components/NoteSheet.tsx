@@ -72,20 +72,6 @@ function NoteForm({ context, note, onDone }: { context?: NoteContext; note: Note
         }}
         options={NOTE_KIND_ORDER.map((k) => ({ value: k, label: NOTE_KINDS[k].label }))}
       />
-      <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
-        <TextInput label="Time" type="time" value={draft.time} onChange={(e) => set({ time: e.target.value })} />
-        <Button onClick={() => set({ time: nowTime() })}>Now</Button>
-      </div>
-      {shift.mode === 'full' && <Select
-        label="Sweep"
-        value={draft.sweepId ?? ''}
-        onChange={(e) => set({ sweepId: e.target.value || null })}
-        options={[
-          { value: '', label: 'Whole shift (not tied to a sweep)' },
-          ...shift.sweeps.map((s, i) => ({ value: s.id, label: `Sweep ${i + 1} (${labelShiftTime(shift.startTime, s.scheduledTime)})` })),
-        ]}
-      />}
-      <TextInput label="Location" value={draft.location} onChange={(e) => set({ location: e.target.value })} placeholder="e.g. LP Floor 3 North lounge" />
       <TextArea
         label="Description"
         value={draft.description}
@@ -96,11 +82,8 @@ function NoteForm({ context, note, onDone }: { context?: NoteContext; note: Note
         placeholder="What happened or what you observed"
         required
       />
-      <TextArea label="Action taken" value={draft.action} onChange={(e) => set({ action: e.target.value })} rows={2} placeholder="Leave blank if no action was taken" />
-      <TextInput label="Contacts" value={draft.contacts} onChange={(e) => set({ contacts: e.target.value })} placeholder="People or services contacted" />
-      {meta.hasReference && (
-        <TextInput label="Reference number" value={draft.reference} onChange={(e) => set({ reference: e.target.value })} placeholder="Work order / IR / SOC number, if any" />
-      )}
+      <TextInput label="Location" value={draft.location} onChange={(e) => set({ location: e.target.value })} placeholder="e.g. LP Floor 3 North lounge" />
+      <TextArea label="Action taken" value={draft.action} onChange={(e) => set({ action: e.target.value })} rows={2} placeholder="Leave blank if none" />
       {meta.statuses.length > 0 && (
         <Select
           label="Status"
@@ -109,11 +92,36 @@ function NoteForm({ context, note, onDone }: { context?: NoteContext; note: Note
           options={meta.statuses.map((s) => ({ value: s.value, label: s.label }))}
         />
       )}
-      <TextArea label="Follow-up needed" value={draft.followUp} onChange={(e) => set({ followUp: e.target.value })} rows={2} placeholder="Leave blank if none" />
 
-      <p className="text-xs text-muted rounded-lg bg-surface-2 p-2">
-        Saving records this in SweepMate only. It does not submit a work order, IR or SOC – file those in the official system.
-      </p>
+      {/* Prefilled or less common fields stay out of the way until needed. */}
+      <details className="group rounded-lg border border-line/70 px-3">
+        <summary className="min-h-11 flex items-center cursor-pointer text-sm font-semibold list-none">
+          <span className="flex-1">More details</span>
+          <span className="text-xs text-muted group-open:hidden">Time, sweep, contacts…</span>
+        </summary>
+        <div className="flex flex-col gap-4 pb-3">
+          <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
+            <TextInput label="Time" type="time" value={draft.time} onChange={(e) => set({ time: e.target.value })} />
+            <Button onClick={() => set({ time: nowTime() })}>Now</Button>
+          </div>
+          {shift.mode === 'full' && <Select
+            label="Sweep"
+            value={draft.sweepId ?? ''}
+            onChange={(e) => set({ sweepId: e.target.value || null })}
+            options={[
+              { value: '', label: 'Whole shift (not tied to a sweep)' },
+              ...shift.sweeps.map((s, i) => ({ value: s.id, label: `Sweep ${i + 1} (${labelShiftTime(shift.startTime, s.scheduledTime)})` })),
+            ]}
+          />}
+          <TextInput label="Contacts" value={draft.contacts} onChange={(e) => set({ contacts: e.target.value })} placeholder="People or services contacted" />
+          {meta.hasReference && (
+            <TextInput label="Reference number" value={draft.reference} onChange={(e) => set({ reference: e.target.value })} placeholder="Work order / IR / SOC number" />
+          )}
+          <TextArea label="Follow-up needed" value={draft.followUp} onChange={(e) => set({ followUp: e.target.value })} rows={2} placeholder="Leave blank if none" />
+        </div>
+      </details>
+
+      <p className="text-xs text-muted">Saving here doesn't file anything. Submit work orders, IRs and SOCs in the official system.</p>
       {error && (
         <p role="alert" className="text-sm text-danger font-semibold">
           {error}

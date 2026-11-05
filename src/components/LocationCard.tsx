@@ -6,8 +6,8 @@ import { Badge, Button } from './ui'
 
 const QUICK_COUNTS = [0, 1, 2, 3, 4, 5]
 
-function entryStateBadge(entry: LocationEntry | undefined) {
-  if (!entry) return <Badge tone="warn">Unanswered</Badge>
+/** Only an answered or skipped location gets a badge; a new location needs no label. */
+function entryStateBadge(entry: LocationEntry) {
   if (entry.state === 'skipped') return <Badge tone="skip">Not checked</Badge>
   return <Badge tone="ok">Saved</Badge>
 }
@@ -19,7 +19,6 @@ function entryStateBadge(entry: LocationEntry | undefined) {
 export function LocationCard({
   location,
   entry,
-  position,
   onSave,
   onSkip,
   onClear,
@@ -28,7 +27,6 @@ export function LocationCard({
 }: {
   location: RouteLocation
   entry: LocationEntry | undefined
-  position: string
   onSave: (draft: { count?: number; status?: string; observation: string }) => void
   onSkip: (observation: string) => void
   onClear: () => void
@@ -76,25 +74,23 @@ export function LocationCard({
   return (
     <div className="flex flex-col gap-5 pb-32">
       <div className="location-enter flex flex-col gap-2">
-        <div className="flex items-center gap-2 text-xs text-muted">
-          <span className="font-semibold">{location.section}</span>
-          {location.direction && (
+        {location.direction && (
+          <div>
             <Badge tone="accent">
               <span className="sr-only">Walking direction: </span>
               {location.direction}
             </Badge>
-          )}
-          <span className="ml-auto tabular-nums">{position}</span>
-        </div>
+          </div>
+        )}
         <h2 className="text-[28px] font-semibold tracking-tight leading-tight">{location.label}</h2>
-        <div className="flex items-center gap-2 min-h-9">
-          {entryStateBadge(entry)}
-          {entry && (
+        {entry && (
+          <div className="flex items-center gap-2 min-h-9">
+            {entryStateBadge(entry)}
             <Button variant="ghost" size="sm" className="text-xs text-muted" onClick={onClear}>
               Clear answer
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {isStatus ? (

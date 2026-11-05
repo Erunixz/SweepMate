@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { createDemoShift } from '../domain/demo'
-import { loadAll, saveDemo, saveShifts, type LoadProblem } from '../domain/storage'
+import { loadAll, saveShifts, type LoadProblem } from '../domain/storage'
 import type { Shift } from '../domain/types'
 
 export type View =
@@ -18,9 +17,8 @@ export interface SaveState {
 }
 
 interface Store {
-  /** Real (non-demo) shifts, most recently updated first. */
+  /** Shifts, most recently updated first. */
   shifts: Shift[]
-  demo: Shift | null
   active: Shift | null
   view: View
   save: SaveState
@@ -28,7 +26,6 @@ interface Store {
   dismissLoadProblem: () => void
   navigate: (view: View) => void
   openShift: (shift: Shift) => void
-  startDemo: () => void
   updateActive: (fn: (s: Shift) => Shift) => void
   deleteShift: (id: string) => void
 }
@@ -47,20 +44,18 @@ function readSession(): { activeId: string | null; view: View } | null {
 
 interface Initial {
   shifts: Shift[]
-  demo: Shift | null
   activeId: string | null
   view: View
   problem: LoadProblem
 }
 
 function loadInitial(): Initial {
-  const { shifts, demo, problem } = loadAll()
+  const { shifts, problem } = loadAll()
   // After a refresh, return to the screen the user was on.
   const session = readSession()
-  const known = session?.activeId && (shifts.some((s) => s.id === session.activeId) || demo?.id === session.activeId)
+  const known = session?.activeId && shifts.some((s) => s.id === session.activeId)
   return {
     shifts,
-    demo,
     activeId: known ? session!.activeId : null,
     view: known ? session!.view : { name: 'welcome' },
     problem,
@@ -84,17 +79,16 @@ export function StoreProvider({
   const [initial] = useState<Initial>(() =>
     persist
       ? loadInitial()
-      : { shifts: initialShifts ?? [], demo: null, activeId: initialActiveId, view: initialView, problem: null },
+      : { shifts: initialShifts ?? [], activeId: initialActiveId, view: initialView, problem: null },
   )
   const [shifts, setShifts] = useState<Shift[]>(initial.shifts)
-  const [demo, setDemo] = useState<Shift | null>(initial.demo)
   const [activeId, setActiveId] = useState<string | null>(initial.activeId)
   const [view, setView] = useState<View>(initial.view)
   const [loadProblem, setLoadProblem] = useState<LoadProblem>(initial.problem)
   const [save, setSave] = useState<SaveState>({ status: 'idle', at: null })
 
   // Autosave whenever shift data actually changes.
-  const lastSaved = useRef({ shifts: JSON.stringify(initial.shifts), demo: JSON.stringify(initial.demo) })
+  const lastSaved = useRef({ shifts: JSON.stringify(initial.shifts) })
   useEffect(() => {
     if (!persist) return
     const json = JSON.stringify(shifts)
@@ -105,14 +99,6 @@ export function StoreProvider({
   }, [shifts, persist])
   useEffect(() => {
     if (!persist) return
-    const json = JSON.stringify(demo)
-    if (json === lastSaved.current.demo) return
-    const ok = saveDemo(demo)
-    if (ok) lastSaved.current.demo = json
-    setSave({ status: ok ? 'saved' : 'error', at: Date.now() })
-  }, [demo, persist])
-  useEffect(() => {
-    if (!persist) return
     try {
       sessionStorage.setItem(SESSION_KEY, JSON.stringify({ activeId, view }))
     } catch {
@@ -120,7 +106,7 @@ export function StoreProvider({
     }
   }, [activeId, view, persist])
 
-  const active = (demo && demo.id === activeId ? demo : shifts.find((s) => s.id === activeId)) ?? null
+  const active = shifts.find((s) => s.id === activeId) ?? null
 
   const navigate = useCallback((v: View) => {
     setView(v)
@@ -129,20 +115,16 @@ export function StoreProvider({
 
   const openShift = useCallback(
     (shift: Shift) => {
-      if (shift.isDemo) setDemo(shift)
-      else setShifts((list) => [shift, ...list.filter((s) => s.id !== shift.id)])
+      setShifts((list) => [shift, ...list.filter((s) => s.id !== shift.id)])
       setActiveId(shift.id)
       navigate({ name: 'overview' })
     },
     [navigate],
   )
 
-  const startDemo = useCallback(() => openShift(demo ?? createDemoShift()), [demo, openShift])
-
   const updateActive = useCallback(
     (fn: (s: Shift) => Shift) => {
       if (!activeId) return
-      setDemo((d) => (d && d.id === activeId ? fn(d) : d))
       setShifts((list) => list.map((s) => (s.id === activeId ? fn(s) : s)))
     },
     [activeId],
@@ -150,7 +132,6 @@ export function StoreProvider({
 
   const deleteShift = useCallback((id: string) => {
     setShifts((list) => list.filter((s) => s.id !== id))
-    setDemo((d) => (d?.id === id ? null : d))
     setActiveId((a) => (a === id ? null : a))
   }, [])
 
@@ -159,7 +140,6 @@ export function StoreProvider({
   const value = useMemo(
     () => ({
       shifts,
-      demo,
       active,
       view,
       save,
@@ -167,11 +147,10 @@ export function StoreProvider({
       dismissLoadProblem,
       navigate,
       openShift,
-      startDemo,
       updateActive,
       deleteShift,
     }),
-    [shifts, demo, active, view, save, loadProblem, dismissLoadProblem, navigate, openShift, startDemo, updateActive, deleteShift],
+    [shifts, active, view, save, loadProblem, dismissLoadProblem, navigate, openShift, updateActive, deleteShift],
   )
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }

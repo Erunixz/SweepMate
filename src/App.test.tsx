@@ -11,7 +11,7 @@ const next = () => fireEvent.click(screen.getByRole('button', { name: 'Next' }))
 
 function startShift() {
   const r = render(<App />)
-  fireEvent.click(screen.getByRole('button', { name: 'Start Shift' }))
+  fireEvent.click(screen.getByRole('button', { name: /^Lead coverage/ }))
   next()
   fireEvent.change(screen.getByLabelText('My name'), { target: { value: 'Erfan' } })
   fireEvent.change(screen.getByLabelText('Other CAs on coverage 1'), { target: { value: 'Jacob' } })
@@ -22,7 +22,7 @@ function startShift() {
 
 it('walks setup in three steps with no pre-filled name, confirmed sweep times, and the confirmed 9 PM–8 AM hours', () => {
   render(<App />)
-  fireEvent.click(screen.getByRole('button', { name: 'Start Shift' }))
+  fireEvent.click(screen.getByRole('button', { name: /^Lead coverage/ }))
   expect(screen.getByRole('heading', { name: 'Which shift?' })).toBeInTheDocument()
   next()
   expect(screen.getByRole('heading', { name: "Who's on coverage?" })).toBeInTheDocument()
@@ -46,7 +46,7 @@ it('shows the CA names on the overview and uses everyone for both buildings by d
 
 it.each(['Weekend', 'Peak day'])('starts %s with the confirmed overnight schedule', (type) => {
   render(<App />)
-  fireEvent.click(screen.getByRole('button', { name: 'Start Shift' }))
+  fireEvent.click(screen.getByRole('button', { name: /^Lead coverage/ }))
   fireEvent.click(screen.getByRole('radio', { name: type }))
   next()
   next()
@@ -60,7 +60,7 @@ it.each(['Weekend', 'Peak day'])('starts %s with the confirmed overnight schedul
 
 it('lets you choose who sweeps each building', () => {
   render(<App />)
-  fireEvent.click(screen.getByRole('button', { name: 'Start Shift' }))
+  fireEvent.click(screen.getByRole('button', { name: /^Lead coverage/ }))
   next()
   fireEvent.change(screen.getByLabelText('My name'), { target: { value: 'Erfan' } })
   fireEvent.change(screen.getByLabelText('Other CAs on coverage 1'), { target: { value: 'Jacob' } })
@@ -74,7 +74,7 @@ it('lets you choose who sweeps each building', () => {
 
 it('saves a schedule as the default for its shift type', () => {
   render(<App />)
-  fireEvent.click(screen.getByRole('button', { name: 'Start Shift' }))
+  fireEvent.click(screen.getByRole('button', { name: /^Lead coverage/ }))
   fireEvent.click(screen.getByRole('radio', { name: 'Peak day' }))
   next()
   next()
@@ -125,13 +125,6 @@ it('requires confirmation before deleting a shift', () => {
   fireEvent.click(screen.getByRole('button', { name: /Delete shift on/ }))
   fireEvent.click(within(screen.getByRole('dialog', { name: 'Delete shift?' })).getByRole('button', { name: 'Delete shift' }))
   expect(JSON.parse(localStorage.getItem(SHIFTS_KEY)!).shifts).toHaveLength(0)
-})
-
-it('opens the demo without adding it to real shifts', () => {
-  render(<App />)
-  fireEvent.click(screen.getByRole('button', { name: /Try a demo shift/ }))
-  expect(screen.getByText(/Demo · fictional data/)).toBeInTheDocument()
-  expect(localStorage.getItem(SHIFTS_KEY)).toBeNull()
 })
 
 it('shows a notice when saved data is corrupted', () => {

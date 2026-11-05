@@ -150,7 +150,6 @@ export interface Shift {
   mode: 'full' | 'quick'
   /** The only building included in quick mode; null for full coverage. */
   quickBuildingId: string | null
-  isDemo: boolean
   /** Coverage date (YYYY-MM-DD) — the date the shift starts on. */
   date: string
   type: ShiftType

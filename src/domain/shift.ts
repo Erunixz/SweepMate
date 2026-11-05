@@ -18,7 +18,6 @@ export interface ShiftDetails {
 
 export interface NewShiftInput extends ShiftDetails {
   sweepTimes: string[]
-  isDemo?: boolean
 }
 
 export function createSweep(scheduledTime: string): Sweep {
@@ -42,12 +41,11 @@ function cleanDetails(d: ShiftDetails): ShiftDetails {
 
 export function createShift(input: NewShiftInput, now = new Date()): Shift {
   const ts = now.toISOString()
-  const { sweepTimes, isDemo, ...details } = input
+  const { sweepTimes, ...details } = input
   const shift: Shift = {
     id: newId(),
     mode: 'full',
     quickBuildingId: null,
-    isDemo: isDemo ?? false,
     ...cleanDetails(details),
     sweeps: [],
     notes: [],

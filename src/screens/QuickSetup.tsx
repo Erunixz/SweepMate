@@ -41,7 +41,6 @@ export function QuickSetup({ mode }: { mode: 'new' | 'edit' }) {
     <Page>
       <div className="pt-2">
         <h2 className="text-2xl font-semibold tracking-tight">Set up your sweep</h2>
-        <p className="mt-1 text-sm text-muted">Record rooms, times and notes, then copy your building report.</p>
       </div>
       <Card>
         <form className="flex flex-col gap-5" noValidate onSubmit={submit}>
@@ -58,7 +57,6 @@ export function QuickSetup({ mode }: { mode: 'new' | 'edit' }) {
           <Button type="submit" variant="primary" size="lg">{editing ? 'Save changes' : 'Start quick sweep'}</Button>
         </form>
       </Card>
-      <p className="text-center text-xs text-muted">Saved on this device as you go.</p>
     </Page>
   </>
 }

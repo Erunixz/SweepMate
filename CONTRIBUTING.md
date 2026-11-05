@@ -2,7 +2,7 @@
 
 ## Setup
 
-Use Node 24 (see `.nvmrc`), run `npm ci`, then `npm run dev`. Start with the built-in demo to explore the app without entering real residence records.
+Use Node 24 (see `.nvmrc`), run `npm ci`, then `npm run dev`. Use fictional names when exploring the app, and delete test shifts from the home screen afterwards.
 
 Read the [architecture guide](docs/architecture.md) before changing domain behavior. The private local build plan is intentionally ignored by Git; the README and `docs/` are the public project documentation.
 
@@ -14,7 +14,7 @@ Read the [architecture guide](docs/architecture.md) before changing domain behav
 - Keep walking order independent from report order, including Les Prince's alternating wings and north-first report.
 - Interpret scheduled times relative to the shift start when crossing midnight.
 - When adding a persisted field, update its type, creation defaults, normalization, and migration/round-trip tests.
-- Keep Quick sweep limited to its selected building and keep fictional demo records separate from real shifts.
+- Keep Quick sweep limited to its selected building.
 - Recording a note must not imply submission to an external reporting system.
 
 ## UI and documentation

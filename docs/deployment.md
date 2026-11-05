@@ -39,11 +39,11 @@ Open the URL printed by Vite. Preview serves an existing build; run the build ag
 ## Before sharing the link
 
 - Open the production address in a fresh browser session and confirm the Princestock start screen loads.
-- Use **Try a demo shift**, inspect the report, and exercise copy/download.
+- Start a test shift with fictional names, inspect the report, exercise copy/download, then delete it.
 - Complete a quick sweep and reload it to check persistence on the deployed origin.
 - Check a phone viewport, keyboard navigation, dark mode, and reduced motion using the [manual test guide](testing.md#manual-browser-checks).
 - If the project uses deployment protection, verify the intended reviewer can open the link.
-- Keep the production URL in the README and GitHub repository Website field up to date. Use demo data for any screenshots.
+- Keep the production URL in the README and GitHub repository Website field up to date. Use fictional names for any screenshots.
 
 The production URL is supplied by the project owner. Run the checks above after deploying; publishing the URL does not establish that every browser workflow has been verified.
 

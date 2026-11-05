@@ -96,7 +96,6 @@ export function Walkthrough({ sweepId, buildingId, index }: { sweepId: string; b
             key={`${sweepId}-${buildingId}-${location.id}`}
             location={location}
             entry={entries[location.id]}
-            position={`${index + 1} / ${route.length}`}
             canGoBack={index > 0}
             onSave={(draft) => {
               write(location, answered(draft))

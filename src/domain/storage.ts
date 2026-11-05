@@ -1,12 +1,12 @@
 /**
- * Local persistence. Real shifts and the demo shift live under separate keys so fictional
- * data can never mix with real records. Damaged data is backed up, never silently discarded.
+ * Local persistence. Damaged data is backed up, never silently discarded.
  */
 import { DEFAULT_SCHEDULES } from '../config/schedules'
 import { getBuilding } from './route'
 import type { Note, Shift, Sweep } from './types'
 
 export const SHIFTS_KEY = 'sweepmate:v1:shifts'
+/** Former demo-shift key, cleared on load. */
 export const DEMO_KEY = 'sweepmate:v1:demo'
 export const BACKUP_PREFIX = 'sweepmate:v1:backup-'
 
@@ -14,7 +14,6 @@ export type LoadProblem = null | 'unavailable' | 'corrupt' | 'partial'
 
 export interface LoadResult {
   shifts: Shift[]
-  demo: Shift | null
   problem: LoadProblem
 }
 
@@ -106,7 +105,6 @@ export function normalizeShift(v: unknown): Shift | null {
   if (isObj(v.buildingCAs)) for (const [b, n] of Object.entries(v.buildingCAs)) buildingCAs[b] = names(n)
   return {
     id: v.id,
-    isDemo: v.isDemo === true,
     mode,
     quickBuildingId,
     date: v.date,
@@ -137,7 +135,7 @@ function backup(storage: KV, key: string, raw: string) {
 }
 
 export function loadAll(storage: KV | null = getStorage()): LoadResult {
-  if (!storage) return { shifts: [], demo: null, problem: 'unavailable' }
+  if (!storage) return { shifts: [], problem: 'unavailable' }
   let problem: LoadProblem = null
   let shifts: Shift[] = []
 
@@ -147,8 +145,9 @@ export function loadAll(storage: KV | null = getStorage()): LoadResult {
       const parsed: unknown = JSON.parse(raw)
       const list = isObj(parsed) && Array.isArray(parsed.shifts) ? parsed.shifts : null
       if (!list) throw new Error('bad shape')
-      const normalized = list.map(normalizeShift)
-      shifts = normalized.filter((s): s is Shift => s !== null && !s.isDemo)
+      // Older versions could store a demo shift here; it is fictional, so skip it.
+      const normalized = list.filter((v) => !(isObj(v) && v.isDemo === true)).map(normalizeShift)
+      shifts = normalized.filter((s): s is Shift => s !== null)
       if (normalized.some((s) => s === null)) {
         problem = 'partial'
         backup(storage, SHIFTS_KEY, raw)
@@ -159,38 +158,24 @@ export function loadAll(storage: KV | null = getStorage()): LoadResult {
     }
   }
 
-  let demo: Shift | null = null
-  const rawDemo = storage.getItem(DEMO_KEY)
-  if (rawDemo) {
-    try {
-      demo = normalizeShift(JSON.parse(rawDemo))
-    } catch {
-      /* demo data is disposable */
-    }
-    if (!demo) storage.removeItem(DEMO_KEY)
+  // The demo shift has been removed; clear any copy left from older versions.
+  try {
+    storage.removeItem(DEMO_KEY)
+  } catch {
+    /* nothing to clean up */
   }
 
   shifts.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-  return { shifts, demo, problem }
+  return { shifts, problem }
 }
 
 export function saveShifts(shifts: Shift[], storage: KV | null = getStorage()): boolean {
   if (!storage) return false
   try {
-    storage.setItem(SHIFTS_KEY, JSON.stringify({ version: 1, shifts: shifts.filter((s) => !s.isDemo) }))
+    storage.setItem(SHIFTS_KEY, JSON.stringify({ version: 1, shifts }))
     return true
   } catch {
     return false
   }
 }
 
-export function saveDemo(demo: Shift | null, storage: KV | null = getStorage()): boolean {
-  if (!storage) return false
-  try {
-    if (demo) storage.setItem(DEMO_KEY, JSON.stringify(demo))
-    else storage.removeItem(DEMO_KEY)
-    return true
-  } catch {
-    return false
-  }
-}

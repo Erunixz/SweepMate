@@ -4,6 +4,7 @@ import { nowTime } from '../domain/time'
 import { testShift } from '../domain/testShift'
 import { StoreProvider, useStore } from '../state/store'
 import { Overview } from './Overview'
+import { Report } from './Report'
 
 function SavedShift() {
   return <output data-testid="saved-shift">{JSON.stringify(useStore().active)}</output>
@@ -34,16 +35,15 @@ it('adds sweeps in overnight order, rejects duplicates, and preserves recorded d
   expect(saved.notes).toEqual(shift.notes)
 })
 
-it('copies every sweep as one ready-to-paste report from the overview', async () => {
+it('copies every sweep as one ready-to-paste report from the Report tab', async () => {
   const writeText = vi.fn().mockResolvedValue(undefined)
   Object.assign(navigator, { clipboard: { writeText } })
   const shift = testShift()
   render(
     <StoreProvider persist={false} initialShifts={[shift]} initialActiveId={shift.id} initialView={{ name: 'overview' }}>
-      <Overview />
+      <Report />
     </StoreProvider>,
   )
-  expect(screen.getByText(/All 3 sweeps in one plain-text report/)).toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Copy Full Report' }))
   await waitFor(() => expect(screen.getByText('Full report copied')).toBeInTheDocument())
 

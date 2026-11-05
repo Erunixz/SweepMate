@@ -6,14 +6,11 @@ import { SaveIndicator } from '../components/SaveIndicator'
 import { Sheet } from '../components/Sheet'
 import { Badge, Button, Card, Eyebrow, Header, Page, ProgressBar, TextInput } from '../components/ui'
 import { SHIFT_TYPE_LABELS } from '../config/schedules'
-import { canShareText, copyText, downloadText, shareText } from '../domain/clipboard'
-import { buildingProgress, firstUnansweredIndex, hasStarted, isDone, missingDetails, missingEntries, sweepProgress } from '../domain/progress'
-import { cleanText, generateReport, reportFileName } from '../domain/report'
+import { buildingProgress, firstUnansweredIndex, hasStarted, isDone, sweepProgress } from '../domain/progress'
 import { getBuilding, getRoute, shiftBuildings } from '../domain/route'
 import { applySchedule, caPool, sweepBuildingCAs } from '../domain/shift'
 import { formatDateShort, formatTime12, isValidTime, labelShiftTime, nowTime } from '../domain/time'
 import type { Shift, Sweep } from '../domain/types'
-import { useReportTemplate } from '../state/reportTemplate'
 import { useActiveShift } from '../state/store'
 
 /** The next building to walk: the first unfinished building of the first unfinished sweep. */
@@ -55,10 +52,6 @@ export function Overview() {
         }
       />
       <Page className="pb-28">
-        {shift.isDemo && (
-          <p className="self-start rounded-full bg-warn-soft text-warn px-3 py-1 text-xs font-semibold">Demo · fictional data</p>
-        )}
-
         {!quick && <UpNext shift={shift} />}
 
         {!quick && <TeamRow names={names} onEdit={edit} />}
@@ -83,8 +76,6 @@ export function Overview() {
         ))}
         {!quick && <AddSweep />}
 
-        <ReportExport shift={shift} />
-
         <div className="flex flex-col items-center gap-1 pt-2 text-center">
           <Button
             variant="ghost"
@@ -94,7 +85,6 @@ export function Overview() {
           >
             {shift.finished ? (quick ? 'Reopen sweep' : 'Reopen shift') : (quick ? 'Mark sweep finished' : 'Mark shift finished')}
           </Button>
-          <p className="text-xs text-muted">{shift.finished ? 'Finished shifts stay editable.' : 'Saved on this device until you delete it.'}</p>
         </div>
       </Page>
       <BottomNav badge={{ notes: openFollowUps }} />
@@ -138,7 +128,10 @@ function UpNext({ shift }: { shift: Shift }) {
       <section className="rounded-lg bg-surface border border-line border-t-4 border-t-accent p-5 flex flex-col gap-1">
         <Eyebrow className="text-accent">Complete</Eyebrow>
         <h2 className="text-xl font-semibold">All sweeps recorded</h2>
-        <p className="text-muted text-sm">Copy the report below and paste it into the reporting system.</p>
+        <p className="text-muted text-sm">Copy the report and paste it into StarRez.</p>
+        <Button variant="primary" size="lg" className="mt-3" onClick={() => navigate({ name: 'report' })}>
+          Open report
+        </Button>
       </section>
     )
   }
@@ -171,74 +164,6 @@ function UpNext({ shift }: { shift: Shift }) {
   )
 }
 
-/** One-tap export of the whole shift — every sweep in a single ready-to-paste report. */
-function ReportExport({ shift }: { shift: Shift }) {
-  const { navigate } = useActiveShift()
-  const { template } = useReportTemplate()
-  const [status, setStatus] = useState('')
-  const text = cleanText(shift.reportDraft ?? generateReport(shift, template))
-  const missing = missingEntries(shift).reduce((n, g) => n + g.locations.length, 0) + missingDetails(shift).length
-  const n = shift.sweeps.length
-  const quick = shift.mode === 'quick'
-
-  return (
-    <Card className="flex flex-col gap-3 p-5">
-      <div className="flex items-start gap-3">
-        <div className="flex-1">
-          <h2 className="font-bold tracking-tight">{quick ? 'Building report' : 'Coverage report'}</h2>
-          <p className="text-sm text-muted">
-            {quick ? 'Your building’s counts, times and notes, ready to paste.' : `All ${n} sweep${n === 1 ? '' : 's'} in one plain-text report, ready to paste.`}
-            {shift.reportDraft !== null && ' Includes your edits.'}
-          </p>
-        </div>
-      </div>
-      {missing > 0 && (
-        <p className="rounded-md bg-warn-soft text-warn px-3 py-2 text-sm font-semibold">
-          {missing} item{missing === 1 ? '' : 's'} not recorded yet – shown as “{template.unanswered}”.
-        </p>
-      )}
-      <div className={`grid gap-2 ${canShareText() ? 'grid-cols-[1fr_auto_auto]' : 'grid-cols-[1fr_auto]'}`}>
-        <Button
-          variant="primary"
-          size="lg"
-          onClick={async () => setStatus((await copyText(text)) ? (quick ? 'Building report copied' : 'Full report copied') : 'Copy failed – open the Report tab and copy manually')}
-        >
-          <Icon name="copy" />
-          {quick ? 'Copy Report' : 'Copy Full Report'}
-        </Button>
-        {canShareText() && (
-          <Button
-            size="lg"
-            aria-label="Share report"
-            title="Share"
-            onClick={async () => {
-              if ((await shareText(reportFileName(shift).replace(/\.txt$/, ''), text)) === 'failed') setStatus('Share failed – use Copy instead')
-            }}
-          >
-            <Icon name="share" />
-          </Button>
-        )}
-        <Button size="lg" onClick={() => downloadText(reportFileName(shift), text)} aria-label="Download TXT">
-          <Icon name="download" />
-          TXT
-        </Button>
-      </div>
-      <div className="flex items-center justify-between min-h-6">
-        <p role="status" className="text-sm text-ok font-semibold">
-          {status && (
-            <>
-              <Icon name="check" size={14} className="inline -mt-0.5" /> {status}
-            </>
-          )}
-        </p>
-        <button type="button" onClick={() => navigate({ name: 'report' })} className="min-h-11 -my-2 px-2 -mr-2 rounded-md text-sm font-semibold text-accent hover:bg-accent-soft">
-          Preview & edit ›
-        </button>
-      </div>
-    </Card>
-  )
-}
-
 /** Everyone on coverage, always visible on the overview. */
 function TeamRow({ names, onEdit }: { names: string[]; onEdit: () => void }) {
   return (
@@ -266,15 +191,8 @@ function SweepCard({ shift, sweep, number, defaultOpen }: { shift: Shift; sweep:
   const detailsId = useId()
   const total = sweepProgress(shift, sweep)
 
-  const status = isDone(total) ? (
-    <Badge tone="ok">
-      <Icon name="check" size={12} /> Done
-    </Badge>
-  ) : hasStarted(total) ? (
-    <Badge tone="accent">In progress</Badge>
-  ) : (
-    <Badge>Upcoming</Badge>
-  )
+  // Upcoming sweeps need no label; only started or finished ones get one.
+  const status = isDone(total) ? <Badge tone="ok">Done</Badge> : hasStarted(total) ? <Badge tone="accent">In progress</Badge> : null
 
   return (
     <Card className="flex flex-col py-3">

@@ -134,7 +134,7 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
   return (
     <>
       <Header
-        title={editing ? 'Edit shift' : 'New shift'}
+        title={editing ? 'Edit shift' : 'Lead coverage'}
         onBack={() => (step > 0 && !editing ? goTo(step - 1) : navigate(editing ? { name: 'overview' } : { name: 'welcome' }))}
         right={
           editing ? (
@@ -200,7 +200,7 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
             <>
               <TextInput label="My name" value={myName} onChange={(e) => setMyName(e.target.value)} autoComplete="name" placeholder="Your name" />
               <NameList label="Other CAs on coverage" names={otherCAs} onChange={setOtherCAs} addLabel="Add CA" />
-              <div className="flex flex-col gap-4 rounded-lg bg-surface border border-line/70 p-4">
+              {pool.length > 0 && <div className="flex flex-col gap-4 rounded-lg bg-surface border border-line/70 p-4">
                 {BUILDINGS.map((b) => (
                   <CAPicker
                     key={b.id}
@@ -210,8 +210,7 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
                     onChange={(names) => setBuildingCAs((m) => ({ ...m, [b.id]: names }))}
                   />
                 ))}
-                <p className="text-xs text-muted">Everyone is selected until you change it. You can adjust it per sweep later.</p>
-              </div>
+              </div>}
             </>
           )}
 
@@ -228,7 +227,6 @@ export function ShiftSetup({ mode }: { mode: 'new' | 'edit' }) {
                 type="time"
                 value={phonePickup}
                 onChange={(e) => setPhonePickup(e.target.value)}
-                hint="Leave blank if not recorded yet."
               />
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
                 <TextInput label="Shift start" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />

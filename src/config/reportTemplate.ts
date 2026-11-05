@@ -1,7 +1,6 @@
 /**
- * Default report template (headings and fixed lines). Location wording lives in
- * `reportBlocks` in buildings.ts. Any field can be overridden from Report → Report template;
- * overrides are saved on the device. Tokens in {braces} are filled in at generation time.
+ * Report template (headings and fixed lines) matching the StarRez format. Location wording
+ * lives in `reportBlocks` in buildings.ts. Tokens in {braces} are filled in at generation time.
  */
 export interface ReportTemplate {
   sweepsHeading: string
@@ -42,22 +41,4 @@ export const DEFAULT_REPORT_TEMPLATE: ReportTemplate = {
   unanswered: '[not recorded]',
   skipped: '[not checked]',
   noneLine: 'None.',
-}
-
-/** Help text for the template editor. */
-export const TEMPLATE_FIELD_HELP: Record<keyof ReportTemplate, string> = {
-  sweepsHeading: 'Heading above the list of scheduled sweep times',
-  sweepTimesSeparator: 'Text between sweep times',
-  notesHeading: 'Heading above the coverage details',
-  coverageDate: 'Token: {date}',
-  phonePickup: 'Token: {time}',
-  shiftStart: 'Shift start line. Token: {time}',
-  buildingStart: 'Building sweep start. Token: {time}',
-  buildingCAs: 'CAs on a building sweep. Token: {names}',
-  buildingEnd: 'Building sweep end. Token: {time}',
-  extraNotesHeading: 'Heading above extra notes',
-  noteSeparator: 'Between time, location and type in a note heading',
-  unanswered: 'Shown for anything not recorded',
-  skipped: 'Shown for a location marked Not Checked',
-  noneLine: 'Shown when there are no extra notes',
 }

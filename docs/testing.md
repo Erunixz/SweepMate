@@ -12,7 +12,7 @@ npm run build
 
 The build includes TypeScript checking. `npm run typecheck` is available separately, and `npm run test:watch` runs tests during development.
 
-The current suite contains 69 tests across 10 files. The latest local verification used Node 20.17.0 and npm 10.8.2 on Windows. The new CI workflow targets Node 24 on Ubuntu; a hosted CI result is pending its first GitHub run.
+The current suite contains 67 tests across 10 files. The latest local verification used Node 20.17.0 and npm 10.8.2 on Windows. The new CI workflow targets Node 24 on Ubuntu; a hosted CI result is pending its first GitHub run.
 
 | Area | Evidence |
 | --- | --- |
@@ -22,8 +22,8 @@ The current suite contains 69 tests across 10 files. The latest local verificati
 | Exact report wording, missing values, notes, north-first LP output | [report.test.ts](../src/domain/report.test.ts) |
 | Persistence round trips, legacy migration, damaged data, write failures | [storage.test.ts](../src/domain/storage.test.ts) |
 | Single-building routes, reports, and persistence | [quickShift.test.ts](../src/domain/quickShift.test.ts) |
-| Setup, presets, saved defaults, resume, demo separation, deletion | [App.test.tsx](../src/App.test.tsx) |
-| Add-sweep validation, retained data, combined report copy | [Overview.test.tsx](../src/screens/Overview.test.tsx) |
+| Setup, presets, saved defaults, resume, deletion | [App.test.tsx](../src/App.test.tsx) |
+| Add-sweep validation, retained data, combined report copy from the Report tab | [Overview.test.tsx](../src/screens/Overview.test.tsx) |
 | Complete routes, keyboard input, zero/skipped states, edits, notes | [Walkthrough.test.tsx](../src/screens/Walkthrough.test.tsx) |
 | Quick-sweep completion, editing, report content, resume, deletion | [QuickSweep.test.tsx](../src/screens/QuickSweep.test.tsx) |
 
@@ -35,7 +35,7 @@ Vitest runs the UI tests with React Testing Library in jsdom. Tests exercise ren
 
 ## Manual browser checks
 
-Use the fictional demo or a disposable test shift, and record the browser, viewport, and result when reviewing a UI change.
+Use a disposable test shift with fictional names, and record the browser, viewport, and result when reviewing a UI change.
 
 - At a narrow phone width, verify count controls, setup inputs, report actions, and fixed navigation do not overlap or scroll sideways.
 - Walk Woodstock past Floor 2 into the basement, then finish at the north kitchen and Floor 1 common room.
@@ -43,6 +43,6 @@ Use the fictional demo or a disposable test shift, and record the browser, viewp
 - Open and close a sheet using a pointer, Escape, and keyboard navigation. Check focus returns to its trigger and collapsed panels cannot receive focus.
 - Switch light/dark themes; check text, selected controls, and browser chrome. Enable reduced motion and verify transitions stop.
 - Copy a report and download TXT in the deployed HTTPS site. Confirm line breaks and zero/skipped/missing values in the output.
-- Reload a partially completed shift; close and reopen the site to check resume. Confirm demo data remains separate.
+- Reload a partially completed shift; close and reopen the site to check resume.
 
 Browser visual review was unavailable in the editing environment. These manual checks are documented for verification, not reported as passed.

@@ -2,7 +2,7 @@
 
 SweepMate is a static Vite application. Build output lives in `dist/`; no backend, API keys, environment variables, or database are required.
 
-**Production address:** [sweep-mate.vercel.app](https://sweep-mate.vercel.app/).
+The production deployment is shared privately with the CAs who use it, so its address isn't published here. `index.html` sets `noindex` so search engines don't list it.
 
 ## Vercel through GitHub
 
@@ -38,12 +38,12 @@ Open the URL printed by Vite. Preview serves an existing build; run the build ag
 
 ## Before sharing the link
 
-- Open the production address in a fresh browser session and confirm the Princestock start screen loads.
+- Open the deployment in a fresh browser session and confirm the Princestock start screen loads.
 - Start a test shift with fictional names, inspect the report, exercise copy/download, then delete it.
 - Complete a quick sweep and reload it to check persistence on the deployed origin.
 - Check a phone viewport, keyboard navigation, dark mode, and reduced motion using the [manual test guide](testing.md#manual-browser-checks).
 - If the project uses deployment protection, verify the intended reviewer can open the link.
-- Keep the production URL in the README and GitHub repository Website field up to date. Use fictional names for any screenshots.
+- Keep the production address out of the README and the GitHub repository's Website field. Use fictional names for any screenshots.
 
 The production URL is supplied by the project owner. Run the checks above after deploying; publishing the URL does not establish that every browser workflow has been verified.
 

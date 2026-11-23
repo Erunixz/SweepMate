@@ -137,23 +137,23 @@ it('lets you go back and edit a previous answer', () => {
 
 it('edits this building sweep’s CAs and times without changing the shift default', () => {
   const { sweepId } = setup()
-  fireEvent.click(screen.getByRole('button', { name: /Sweep details: Not started · Erfan, Jacob/ }))
+  fireEvent.click(screen.getByRole('button', { name: /Sweep details: Not started · Erfan, Riley/ }))
   const dialog = screen.getByRole('dialog', { name: /Les Prince sweep details/ })
   fireEvent.click(within(dialog).getByRole('button', { name: /Erfan/, pressed: true }))
   fireEvent.change(within(dialog).getByLabelText('End time'), { target: { value: '21:45' } })
-  expect(bsweep(sweepId, 'lp')).toMatchObject({ cas: ['Jacob'], actualEnd: '21:45' })
-  expect(latest!.buildingCAs.lp).toEqual(['Erfan', 'Jacob'])
+  expect(bsweep(sweepId, 'lp')).toMatchObject({ cas: ['Riley'], actualEnd: '21:45' })
+  expect(latest!.buildingCAs.lp).toEqual(['Erfan', 'Riley'])
 })
 
-it('adds a note (e.g. B103) pre-filled with the current sweep and location', () => {
+it('adds a note (e.g. X12) pre-filled with the current sweep and location', () => {
   const { sweepId } = setup('woodstock')
   fireEvent.click(screen.getByRole('button', { name: 'Add note' }))
   expect(screen.getByLabelText('Location')).toHaveValue('Woodstock Floor 6 common room')
   expect((screen.getByLabelText('Time') as HTMLInputElement).value).toMatch(/^\d\d:\d\d$/)
-  fireEvent.change(screen.getByLabelText('Location'), { target: { value: 'Woodstock B103' } })
-  fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'B103 open' } })
+  fireEvent.change(screen.getByLabelText('Location'), { target: { value: 'Woodstock X12' } })
+  fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'X12 open' } })
   fireEvent.click(screen.getByRole('button', { name: /save note/i }))
-  expect(latest!.notes[0]).toMatchObject({ kind: 'general', sweepId, location: 'Woodstock B103', description: 'B103 open' })
+  expect(latest!.notes[0]).toMatchObject({ kind: 'general', sweepId, location: 'Woodstock X12', description: 'X12 open' })
 })
 
 it('records a maintenance note as observed, not submitted', () => {

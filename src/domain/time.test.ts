@@ -52,7 +52,7 @@ it('formats 12-hour times', () => {
 })
 
 it('joins names naturally', () => {
-  expect(joinNames(['Erfan', 'Jacob'])).toBe('Erfan and Jacob')
+  expect(joinNames(['Erfan', 'Riley'])).toBe('Erfan and Riley')
   expect(joinNames(['A', 'B', 'C'])).toBe('A, B and C')
   expect(joinNames(['A'])).toBe('A')
 })

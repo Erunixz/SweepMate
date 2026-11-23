@@ -14,7 +14,7 @@ function startShift() {
   fireEvent.click(screen.getByRole('button', { name: /^Lead coverage/ }))
   next()
   fireEvent.change(screen.getByLabelText('My name'), { target: { value: 'Erfan' } })
-  fireEvent.change(screen.getByLabelText('Other CAs on coverage 1'), { target: { value: 'Jacob' } })
+  fireEvent.change(screen.getByLabelText('Other CAs on coverage 1'), { target: { value: 'Riley' } })
   next()
   fireEvent.click(screen.getByRole('button', { name: 'Start shift' }))
   return r
@@ -42,9 +42,9 @@ it('walks setup in three steps with no pre-filled name, confirmed sweep times, a
 
 it('shows the CA names on the overview and uses everyone for both buildings by default', () => {
   startShift()
-  expect(screen.getByText('Weekday · Erfan, Jacob')).toBeInTheDocument()
+  expect(screen.getByText('Weekday · Erfan, Riley')).toBeInTheDocument()
   const saved = JSON.parse(localStorage.getItem(SHIFTS_KEY)!).shifts[0]
-  expect(saved.buildingCAs).toEqual({ woodstock: ['Erfan', 'Jacob'], lp: ['Erfan', 'Jacob'] })
+  expect(saved.buildingCAs).toEqual({ woodstock: ['Erfan', 'Riley'], lp: ['Erfan', 'Riley'] })
 })
 
 it('starts a Weekend shift with the 9 PM, 11 PM and 1 AM sweeps', () => {
@@ -65,13 +65,13 @@ it('lets you choose who sweeps each building', () => {
   fireEvent.click(screen.getByRole('button', { name: /^Lead coverage/ }))
   next()
   fireEvent.change(screen.getByLabelText('My name'), { target: { value: 'Erfan' } })
-  fireEvent.change(screen.getByLabelText('Other CAs on coverage 1'), { target: { value: 'Jacob' } })
+  fireEvent.change(screen.getByLabelText('Other CAs on coverage 1'), { target: { value: 'Riley' } })
   const lp = screen.getByRole('group', { name: 'Sweeping Les Prince' })
   fireEvent.click(within(lp).getByRole('button', { name: /Erfan/ }))
   next()
   fireEvent.click(screen.getByRole('button', { name: 'Start shift' }))
   const saved = JSON.parse(localStorage.getItem(SHIFTS_KEY)!).shifts[0]
-  expect(saved.buildingCAs).toEqual({ woodstock: ['Erfan', 'Jacob'], lp: ['Jacob'] })
+  expect(saved.buildingCAs).toEqual({ woodstock: ['Erfan', 'Riley'], lp: ['Riley'] })
 })
 
 it('offers only Weekday and Weekend, each with its own sweep times and no save-default option', () => {

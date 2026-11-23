@@ -86,7 +86,7 @@ export function labelShiftTime(shiftStart: string, t: string): string {
   return isNextDay(shiftStart, t) ? `${formatTime12(t)} (next day)` : formatTime12(t)
 }
 
-/** "Erfan and Jacob", "A, B and C". */
+/** "Erfan and Riley", "A, B and C". */
 export function joinNames(names: string[]): string {
   if (names.length <= 2) return names.join(' and ')
   return `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`

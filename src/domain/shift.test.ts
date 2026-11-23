@@ -7,14 +7,14 @@ const answered = (count: number) => ({ state: 'answered' as const, count, observ
 const skipped = { state: 'skipped' as const, observation: '', updatedAt: '' }
 
 it('orders sweeps across midnight and trims names', () => {
-  const s = testShift({ sweepTimes: ['01:00', '21:00', '23:00'], otherCAs: [' Jacob ', ''] })
+  const s = testShift({ sweepTimes: ['01:00', '21:00', '23:00'], otherCAs: [' Riley ', ''] })
   expect(s.sweeps.map((w) => w.scheduledTime)).toEqual(['21:00', '23:00', '01:00'])
-  expect(s.otherCAs).toEqual(['Jacob'])
-  expect(caPool(s)).toEqual(['Erfan', 'Jacob'])
+  expect(s.otherCAs).toEqual(['Riley'])
+  expect(caPool(s)).toEqual(['Erfan', 'Riley'])
 })
 
 it('does not pre-fill my name', () => {
-  expect(caPool(testShift({ myName: '', otherCAs: ['Jacob'] }))).toEqual(['Jacob'])
+  expect(caPool(testShift({ myName: '', otherCAs: ['Riley'] }))).toEqual(['Riley'])
 })
 
 it('keeps zero, skipped and unanswered distinct', () => {
@@ -39,11 +39,11 @@ it('never carries counts into another sweep or building', () => {
 it('keeps building times and CAs per sweep, defaulting CAs from the shift', () => {
   let s = testShift()
   const [first, second] = s.sweeps
-  s = updateBuildingSweep(s, first!.id, 'lp', (b) => ({ ...b, actualStart: '21:30', cas: ['Jacob'] }))
+  s = updateBuildingSweep(s, first!.id, 'lp', (b) => ({ ...b, actualStart: '21:30', cas: ['Riley'] }))
   s = setEntry(s, first!.id, 'lp', 'games', answered(1)) // setting an entry keeps the times
   expect(s.sweeps[0]!.buildings.lp!.actualStart).toBe('21:30')
-  expect(sweepBuildingCAs(s, s.sweeps[0]!, 'lp')).toEqual(['Jacob'])
-  expect(sweepBuildingCAs(s, s.sweeps[1]!, 'lp')).toEqual(['Erfan', 'Jacob'])
+  expect(sweepBuildingCAs(s, s.sweeps[0]!, 'lp')).toEqual(['Riley'])
+  expect(sweepBuildingCAs(s, s.sweeps[1]!, 'lp')).toEqual(['Erfan', 'Riley'])
   expect(s.sweeps.find((w) => w.id === second!.id)!.buildings.lp).toBeUndefined()
 })
 

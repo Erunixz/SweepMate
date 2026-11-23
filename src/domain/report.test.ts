@@ -6,28 +6,28 @@ import type { LocationEntry, Shift } from './types'
 
 const ans = (count: number, observation = ''): LocationEntry => ({ state: 'answered', count, observation, updatedAt: '' })
 
-/** October 29, 9:00 PM Woodstock counts from the real notes (used only as test data). */
-const OCT29_WOODSTOCK: Record<string, number> = {
-  'f6-common': 1,
-  'f5-common': 1,
-  'f4-common': 0,
-  'f3-common': 4,
-  'f2-common': 1,
-  'f1-common': 6,
-  'north-kitchen': 0,
-  'study-101e': 4,
-  'study-101c': 7,
+/** Fictional 9:00 PM Woodstock counts used as test data. */
+const SAMPLE_WOODSTOCK: Record<string, number> = {
+  'f6-common': 2,
+  'f5-common': 0,
+  'f4-common': 1,
+  'f3-common': 3,
+  'f2-common': 2,
+  'f1-common': 5,
+  'north-kitchen': 1,
+  'study-101e': 3,
+  'study-101c': 6,
   laundry: 0,
-  games: 9,
+  games: 8,
 }
 
 function withWoodstock(s: Shift): Shift {
   const sweep = s.sweeps[0]!.id
-  for (const [id, n] of Object.entries(OCT29_WOODSTOCK)) s = setEntry(s, sweep, 'woodstock', id, ans(n))
+  for (const [id, n] of Object.entries(SAMPLE_WOODSTOCK)) s = setEntry(s, sweep, 'woodstock', id, ans(n))
   return updateBuildingSweep(s, sweep, 'woodstock', (b) => ({ ...b, actualStart: '21:00', actualEnd: '21:24' }))
 }
 
-it('reproduces the October 29 Woodstock section in the template format', () => {
+it('reproduces a Woodstock section in the template format', () => {
   const section = generateSweepSection(withWoodstock(testShift()), 0)
   expect(section).toContain(
     [
@@ -35,20 +35,20 @@ it('reproduces the October 29 Woodstock section in the template format', () => {
       '',
       'Woodstock',
       'Start time: 9:00 PM',
-      'CAs: Erfan and Jacob',
+      'CAs: Erfan and Riley',
       '',
-      '6: 1 in common room.',
-      '5: 1 in common room.',
-      '4: 0 in common room.',
-      '3: 4 in common room.',
-      '2: 1 in common room.',
-      '1: 6 in common room.',
+      '6: 2 in common room.',
+      '5: 0 in common room.',
+      '4: 1 in common room.',
+      '3: 3 in common room.',
+      '2: 2 in common room.',
+      '1: 5 in common room.',
       '',
-      '1st-floor north kitchen: 0.',
-      'Study room 101E: 4.',
-      'Study room 101C: 7.',
+      '1st-floor north kitchen: 1.',
+      'Study room 101E: 3.',
+      'Study room 101C: 6.',
       'Laundry room: 0.',
-      'Games room: 9.',
+      'Games room: 8.',
       '',
       'End time: 9:24 PM',
     ].join('\n'),
@@ -89,7 +89,7 @@ it('labels unanswered, Not Checked, missing times and CAs instead of inventing t
 it('builds the full report: sweeps list, coverage notes, every sweep and Extra Notes', () => {
   let s = withWoodstock(testShift())
   s = { ...s, extraNotes: 'Quiet night overall.\n\n' }
-  s = upsertNote(s, createNote('general', { time: '21:10', location: 'Woodstock', description: 'B103 open' }))
+  s = upsertNote(s, createNote('general', { time: '21:10', location: 'Woodstock', description: 'X12 open' }))
   s = upsertNote(
     s,
     createNote('work-order', { time: '00:15', location: 'Les Prince Floor 3', description: 'Ceiling leak', action: 'Placed bucket', contacts: 'Facilities' }),
@@ -98,7 +98,7 @@ it('builds the full report: sweeps list, coverage notes, every sweep and Extra N
 
   expect(
     r.startsWith(
-      'SWEEPS:\n9:00 PM, 11:00 PM, 1:00 AM\n\nNOTES:\nCoverage date: October 29, 2026\nStart: 9:00 PM\n\n9:00 PM\n\nWoodstock',
+      'SWEEPS:\n9:00 PM, 11:00 PM, 1:00 AM\n\nNOTES:\nCoverage date: November 12, 2026\nStart: 9:00 PM\n\n9:00 PM\n\nWoodstock',
     ),
   ).toBe(true)
   expect(r).toContain('11:00 PM\n\nWoodstock\nStart time: [not recorded]')
@@ -109,7 +109,7 @@ it('builds the full report: sweeps list, coverage notes, every sweep and Extra N
       'Quiet night overall.',
       '',
       '9:10 PM — Woodstock',
-      'B103 open.',
+      'X12 open.',
       '',
       '12:15 AM — Les Prince Floor 3 — Maintenance',
       'Ceiling leak.',
@@ -122,8 +122,8 @@ it('builds the full report: sweeps list, coverage notes, every sweep and Extra N
 
 it('keeps line breaks in a note description, one sentence per line', () => {
   let s = testShift()
-  s = upsertNote(s, createNote('general', { time: '22:00', description: 'loud music in 4B\n\n  asked residents to lower it.  \nquiet by 10:10' }))
-  expect(generateReport(s)).toContain('10:00 PM\nLoud music in 4B.\nAsked residents to lower it.\nQuiet by 10:10.')
+  s = upsertNote(s, createNote('general', { time: '22:00', description: 'loud music in X4\n\n  asked residents to lower it.  \nquiet by 10:10' }))
+  expect(generateReport(s)).toContain('10:00 PM\nLoud music in X4.\nAsked residents to lower it.\nQuiet by 10:10.')
 })
 
 it('formats a note without a time or description without leaving gaps', () => {

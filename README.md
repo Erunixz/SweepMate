@@ -1,104 +1,73 @@
 # SweepMate
 
-**A mobile-first tool for overnight residence rounds, from the first room count to the final coverage report.**
+**An offline-first app for overnight residence rounds: walk the route, record every room, and get a report ready to paste into StarRez.**
 
-[**Open the live app**](https://sweep-mate.vercel.app/) · [Try the workflow](#try-the-workflow) · [Explore the architecture](docs/architecture.md)
+[![CI](https://github.com/Erunixz/SweepMate/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
 
-Built for the Princestock workflow at Woodstock and Les Prince, SweepMate helps Community Advisors (CAs) keep track of overnight building rounds. It brings the route, room counts, observations, and final coverage report into one mobile-friendly workflow.
+> **Status:** Live and in use on real overnight shifts, and in the process of becoming an official McMaster tool for residence Community Advisors. The live link is shared privately with the CAs who use it.
 
-[Run locally](#run-locally) · [Engineering highlights](#engineering-highlights) · [Testing](docs/testing.md) · [Deployment](docs/deployment.md)
+[Why I built it](#why-i-built-it) · [What it does](#what-it-does) · [Privacy by design](#privacy-by-design) · [Engineering](#engineering) · [Run locally](#run-locally)
 
-## Why SweepMate exists
+## Why I built it
 
-An overnight residence shift involves more than walking through a building. CAs check shared spaces, record how many people are present, note maintenance issues or other observations, and prepare a record of the night's coverage. Those checks repeat throughout the shift, often across midnight and across buildings with different layouts.
+I'm a residence Community Advisor (CA). Overnight coverage means sweeping the buildings several times a night: walking every floor, counting the people in each shared space, noting maintenance issues and anything else worth recording. At the end of the shift, all of it goes into a coverage report in StarRez, the residence system.
 
-All of it ends up in StarRez, the residence system where coverage reports are filed. Without a dedicated tool, that means jotting counts and observations wherever is quickest during the round, then retyping them into StarRez's format at the end of a long night, when details are easiest to lose.
+In practice, that meant scribbling counts into a phone's notes app while walking, then retyping everything into StarRez's format at the end of a long night, when details are easiest to lose. The notes also stayed on personal phones and cloud accounts long after the report was filed.
 
-SweepMate grew out of actual residence sweep notes and the specific routes used in Woodstock and Les Prince. The motivation was to make the recording process fit the work: show the next room while walking, capture details when they are observed, and turn those entries into a report that is ready to paste into StarRez, either the whole night at once or one sweep at a time. The goal is less time reconstructing a round from scattered notes and more attention available for the round itself.
+I built SweepMate to solve a problem I had myself. It guides each round room by room, captures details where they happen, and turns them into a consistent, ready-to-paste report, with nothing stored anywhere but the phone.
 
-That purpose shapes the small details. Woodstock's route visits the basement before returning to the first floor. Les Prince alternates wings as the CA moves downstairs. A 1 AM sweep stays with the overnight shift it belongs to. An empty room, a skipped room, and an unfinished entry remain distinct so the final report reflects what happened. Rounds pass through basements and stairwells with weak signal, so the app works offline and saves every entry on the phone as it is made.
+## What it does
 
-## Who it is for
+<p align="center">
+  <img src="docs/media/screens.webp" alt="SweepMate screens: home, shift setup, recording a room count, adding a maintenance note, and the finished coverage report" width="100%">
+</p>
+<p align="center"><sub>Home · Shift setup · Recording a room · Adding a note · The finished report (fictional data)</sub></p>
 
-- **Lead CA (Lead coverage):** runs the night's full coverage. Plan the sweeps, record who covers each building, track progress, and copy the combined report, or a single sweep, into StarRez.
-- **Support CAs (Quick sweep):** help the lead with individual sweeps. Record one building's route and copy that building's section without setting up the whole coverage shift.
-- **Anyone returning to unfinished work:** resume saved rounds, revisit a room, and keep observations and follow-up notes attached to the relevant sweep.
+- **Guided rounds:** one location at a time, in each building's real walking order. Tap a count or type it in. An empty room is a real **0**, and a skipped room stays visibly blank.
+- **Overnight-aware schedule:** sweeps after midnight stay with the shift they belong to. Sweeps can be added mid-shift without losing recorded data.
+- **Notes as they happen:** maintenance issues, incident reports, students of concern and follow-ups, each timestamped and tied to its sweep, with a status like "work order submitted".
+- **One-tap reporting:** copy the whole night, or a single sweep, in the exact StarRez format. Anything missing is flagged as `[not recorded]`, never guessed.
+- **Two roles:** **Lead coverage** for the CA running the night, and **Quick sweep** for support CAs helping with a single building.
+- **Built for the job:** installable to the home screen, works with no signal in basements and stairwells, large touch targets, and light and dark themes.
 
-## From the round to the report
+## Privacy by design
 
-At the start of a shift, a CA sets the schedule and team. During a round, the app presents one location at a time with quick count controls and space for observations. Notes can be added where they arise, and the overview shows which parts of the round still need attention.
+SweepMate handles notes about residence life, so it's built to keep them on the CA's phone:
 
-At the end, those records become a consistent plain-text report in the StarRez format that can be reviewed, edited, copied, shared, or downloaded. Walking order and report order are handled separately, so the CA can follow the physical route while still producing the expected reporting format.
+- **No backend.** There's no server, database, account or analytics. The app is static files, and at runtime it makes no network requests: no `fetch`, no third-party scripts, no tracking.
+- **Data stays on the device.** Shifts are saved in the browser's local storage on the phone that recorded them, and nowhere else.
+- **Offline-first.** A service worker precaches the app, so a full shift works in airplane mode, which is only possible because nothing needs a server.
+- **Out of sight.** The live deployment is shared privately and marked `noindex`, so it doesn't appear in search engines.
 
-The app opens directly in a browser without an account. Large controls, light and dark themes, and a restrained interface keep the focus on recording the next room.
+## Engineering
 
-## Try the workflow
+**React 19 · TypeScript · Vite · Tailwind CSS v4 · PWA (Workbox) · Vitest · React Testing Library**
 
-**New to SweepMate?** [Watch the 2-minute video tutorial](docs/media/sweepmate-tutorial.mp4). It follows a Lead CA through setting up a shift, walking a route, logging a work-order note, and copying the report or a single sweep for StarRez.
-
-[![SweepMate video tutorial](docs/media/sweepmate-tutorial-poster.jpg)](docs/media/sweepmate-tutorial.mp4)
-
-Open [sweep-mate.vercel.app](https://sweep-mate.vercel.app/). No installation or account is required, and test entries can be deleted from the home screen afterwards. The same walkthrough works [locally](#run-locally).
-
-1. Tap **Lead coverage**, add a couple of CA names, and start the shift.
-2. Tap **Start Woodstock**. Record **0** for an empty room, then tap **Skip** on the next location to leave it blank.
-3. Tap **Note** during the walkthrough and see its time, sweep and location prefilled.
-4. Open **Report** to compare recorded values and `[not recorded]`. Copy the full report, or a single sweep, for StarRez.
-5. Return home and try **Quick sweep**, the single-building workflow for support CAs, with no Lead CA setup.
-
-```text
-Start Lead coverage or a Quick sweep
-              |
-Walk the route and record each room
-              |
-Review counts, times, and notes
-              |
-Copy or download the report
-```
-
-## Features
-
-| Workflow | What it supports |
-| --- | --- |
-| Lead coverage | Three-step setup, CA assignments, editable schedules, per-building start/end times, and a combined report |
-| Quick sweep | One building, a date/time, optional CA names, and a building-only report |
-| Guided rounds | Configurable routes, a type-in count box with 0–5 shortcuts, Skip for rooms that can't be checked, observations, and revisiting rooms |
-| Overnight scheduling | Every shift runs 9 PM–8 AM. Weekdays sweep at 9 PM and 11 PM; weekends also include 1 AM the next day. Times can be adjusted in setup |
-| Mid-shift changes | Add sweeps from the overview, reject duplicate times, and retain existing sweep records when reordering |
-| Notes and follow-up | General notes, maintenance, Incident Reports, Students of Concern, and follow-up status |
-| Reporting | StarRez format, missing-detail checks, editable report text, copy the full report or one sweep, and TXT download |
-| Local persistence | Autosave, resume after refresh, older-save normalization, and a warning if a save fails |
-| Offline app | Installable to the home screen, opens with no signal after the first visit, and asks before reloading for updates |
-| Sharing | Copy, system share sheet on supported devices, and TXT download |
-| Interface | Maroon light/dark themes, large touch controls, labelled inputs, keyboard focus states, and reduced-motion support |
-
-## Engineering highlights
-
-**React 19 · TypeScript · Tailwind CSS v4 · Vite · Vitest · React Testing Library**
-
-The engineering decisions follow the needs of the shift: preserve observations, adapt to the building, and keep the report consistent as the schedule changes.
+The engineering follows the realities of the shift: preserve what was observed, adapt to each building, and keep the report correct as the night changes.
 
 | Decision | Why it matters | Implementation |
 | --- | --- | --- |
-| Model unanswered, zero, and skipped separately | Reports preserve what was actually observed | [Types](src/domain/types.ts), [progress](src/domain/progress.ts), [report tests](src/domain/report.test.ts) |
-| Keep route configuration separate from report layout | Les Prince alternates walking direction while every floor reports north-first | [Building config](src/config/buildings.ts), [route generation](src/domain/route.ts) |
-| Preserve sweep identity during schedule edits | Adding or moving a time retains its counts, CAs, and notes | [Shift operations](src/domain/shift.ts), [overview regression test](src/screens/Overview.test.tsx) |
-| Normalize saved JSON at the storage boundary | Older records can load with defaults; invalid shifts are detected | [Storage](src/domain/storage.ts), [migration tests](src/domain/storage.test.ts) |
-| Reuse the recording model for both modes | Quick sweeps share the same route, note, and persistence behavior | [Quick-sweep domain tests](src/domain/quickShift.test.ts), [workflow tests](src/screens/QuickSweep.test.tsx) |
+| Model **zero**, **skipped** and **unanswered** as distinct states | The report reflects what actually happened; a blank is never silently saved as 0 | [Types](src/domain/types.ts), [progress](src/domain/progress.ts), [report tests](src/domain/report.test.ts) |
+| Keep **route configuration separate from report layout** | Les Prince alternates wings while walking downstairs, but every floor reports north-first | [Building config](src/config/buildings.ts), [route generation](src/domain/route.ts) |
+| Keep **sweep records intact when the schedule changes** | Adding or moving a sweep mid-shift retains its counts, CAs and notes | [Shift operations](src/domain/shift.ts), [regression test](src/screens/Overview.test.tsx) |
+| **Normalize saved data at the storage boundary** | Records from older versions load safely, and damaged data is backed up instead of discarded | [Storage](src/domain/storage.ts), [migration tests](src/domain/storage.test.ts) |
+| **Offline-first with no server** | Precached app shell; every entry autosaves locally; updates wait for a tap so a new version never reloads mid-round | [PWA config](vite.config.ts), [update prompt](src/components/UpdatePrompt.tsx), [store](src/state/store.tsx) |
 
-The current suite has **68 automated tests** covering routes, overnight schedules, saved records, report output, and UI workflows. See the [testing guide](docs/testing.md) for the checks and how to run them.
+**Testing:** 68 automated tests cover routes, overnight time handling, schedule edits, storage migrations, exact report output, and full UI workflows driven through React Testing Library. [CI](.github/workflows/ci.yml) runs lint, tests and a production build on every push and pull request. See the [testing guide](docs/testing.md).
 
 ### Suggested code-review path
 
-1. [Data model](src/domain/types.ts): how shifts, individual sweeps, building records, and location answers relate.
+1. [Data model](src/domain/types.ts): how shifts, sweeps, building records and location answers relate.
 2. [Route generation](src/domain/route.ts) and [configuration](src/config/buildings.ts): one walkthrough supports both fixed and alternating building layouts.
 3. [Schedule operations](src/domain/shift.ts): retained sweep IDs preserve answers when the schedule changes.
 4. [Report generation](src/domain/report.ts): recorded state becomes consistent text without silently filling missing details.
-5. [Quick-sweep workflow tests](src/screens/QuickSweep.test.tsx): follow a complete route, edit details, inspect the report, resume, and delete a record through the UI.
+5. [Quick-sweep workflow tests](src/screens/QuickSweep.test.tsx): a complete route, edits, the report, resuming and deleting, all through the UI.
+
+The [architecture guide](docs/architecture.md) explains the data flow and tradeoffs.
 
 ## Run locally
 
-Use **Node.js 24** and npm for a new checkout; `.nvmrc` and the CI workflow select Node 24. See the [Node release schedule](https://nodejs.org/en/about/previous-releases) for supported runtimes.
+No keys, accounts or database are needed. Use **Node.js 24** (see `.nvmrc`):
 
 ```bash
 git clone https://github.com/Erunixz/SweepMate.git
@@ -107,18 +76,15 @@ npm ci
 npm run dev
 ```
 
-Open the local address printed by Vite, usually `http://localhost:5173`.
-
-No environment variables, API keys, database, or account setup are required. To open the app on a phone on the same network, run `npm run dev -- --host` and use the network address printed by Vite.
+Open the address Vite prints, usually `http://localhost:5173`. To try it on a phone on the same network, run `npm run dev -- --host`.
 
 | Command | Purpose |
 | --- | --- |
 | `npm run dev` | Start the development server |
-| `npm test` | Run the automated suite once |
-| `npm run test:watch` | Re-run tests while editing |
+| `npm test` | Run the test suite once |
 | `npm run typecheck` | Check TypeScript |
 | `npm run lint` | Run ESLint |
-| `npm run build` | Check TypeScript and build into `dist/` |
+| `npm run build` | Type-check and build into `dist/` |
 | `npm run preview` | Serve the production build locally |
 
 ## Project structure
@@ -127,26 +93,13 @@ No environment variables, API keys, database, or account setup are required. To 
 src/
   config/       Building routes, schedules, note kinds, report wording
   domain/       Data types, shift operations, time, routes, reports, storage
-  state/        React context, autosave, navigation, user preferences
+  state/        React context, autosave, navigation, preferences
   components/   Shared controls, location entry, dialogs, navigation
-  screens/      Setup, overview, walkthrough, notes, report, welcome
+  screens/      Setup, overview, walkthrough, notes, report, home
   test/         Shared test environment
-.github/        CI workflow and pull request template
-docs/           Architecture, testing, and deployment guides
+docs/           Architecture, testing and deployment guides
 ```
 
-Start a code review with [types.ts](src/domain/types.ts), [shift.ts](src/domain/shift.ts), and [report.ts](src/domain/report.ts). The [architecture guide](docs/architecture.md) explains the data flow and tradeoffs.
+## License
 
-## Deployment
-
-The production address is [sweep-mate.vercel.app](https://sweep-mate.vercel.app/). SweepMate builds as a static site. On Vercel, select **Vite**, use `npm run build`, and publish `dist`. No server functions or environment variables are required. See the [deployment guide](docs/deployment.md) for setup and post-deployment checks.
-
-[CI](.github/workflows/ci.yml) is configured to install the lockfile dependencies, lint, run tests, and build on pushes and pull requests. See the [testing guide](docs/testing.md#continuous-integration) for workflow details.
-
-## Working with shift records
-
-Shifts save in the browser where they are recorded; download the report when you need a separate copy. SweepMate helps prepare coverage records, while official incident and maintenance submissions remain in their respective systems. Storage details and development tradeoffs are documented in the [architecture guide](docs/architecture.md#scope-and-future-work).
-
-## Contributing and license
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, domain rules, and review expectations. Licensed under the [MIT License](LICENSE).
+[MIT](LICENSE) © Erfan Zamani
